@@ -1,0 +1,118 @@
+.account-menu {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  min-width: 320px;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+
+    h3 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .btn-close {
+      background: transparent;
+      border: none;
+      color: white;
+      cursor: pointer;
+      padding: 0.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: background 0.2s;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+    }
+  }
+
+  &__content {
+    padding: 1rem 0;
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+
+      .user-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1.2rem;
+      }
+
+      .user-details {
+        flex: 1;
+
+        .user-name {
+          font-weight: 600;
+          color: #2c3e50;
+          margin-bottom: 0.25rem;
+        }
+
+        .user-email {
+          font-size: 0.85rem;
+          color: #7f8c8d;
+        }
+      }
+    }
+
+    .menu-divider {
+      height: 1px;
+      background: #ecf0f1;
+      margin: 0.5rem 0;
+    }
+
+    .menu-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.875rem 1.5rem;
+      background: transparent;
+      border: none;
+      color: #2c3e50;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-size: 0.95rem;
+
+      &:hover {
+        background: #f8f9fa;
+      }
+
+      svg {
+        color: #667eea;
+      }
+
+      &--danger {
+        color: #e74c3c;
+
+        svg {
+          color: #e74c3c;
+        }
+
+        &:hover {
+          background: #fee;
+        }
+      }
+    }
+  }
+}

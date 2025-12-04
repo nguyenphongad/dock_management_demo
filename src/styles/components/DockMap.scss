@@ -1,0 +1,723 @@
+.dock-map {
+  background: white;
+  padding: 0;
+  margin: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  &__header {
+    padding: 0.75rem 1rem;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+
+    .header-left {
+      flex-shrink: 0;
+    }
+
+    .header-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .header-right {
+      flex-shrink: 0;
+    }
+  }
+
+  &__title {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  &__legend {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+
+      &--empty {
+        background: #e9ecef;
+        border: 2px solid #adb5bd;
+      }
+      &--loading {
+        background: #3498db;
+      }
+      &--warning {
+        background: #f39c12;
+      }
+      &--exceeded {
+        background: #e74c3c;
+      }
+    }
+  }
+
+  &__content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem;
+    gap: 0;
+    overflow: hidden;
+    min-height: 0;
+    position: relative;
+  }
+}
+
+.dock-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-shrink: 0;
+
+  .area-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.4rem 0.75rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .gate-exit {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: 0 3px 10px rgba(231, 76, 60, 0.4);
+    animation: pulse 2s infinite;
+    border: 2px solid white;
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      border-radius: 6px;
+      z-index: -1;
+      filter: blur(4px);
+      opacity: 0.5;
+    }
+
+    svg {
+      animation: bounce 1s infinite;
+    }
+
+    &--top {
+      position: absolute;
+      top:0px;
+      right: 0px;
+      z-index: 10;
+    }
+
+    &--left {
+      position: absolute;
+      left: -5rem;
+      bottom: 2rem;
+      z-index: 10;
+    }
+
+    &--right {
+      position: absolute;
+      right: 0px;
+      bottom: 2rem;
+      z-index: 10;
+    }
+
+    &--a2, &--a3 {
+      writing-mode: horizontal-tb;
+      transform: none;
+      padding: 0.4rem 0.8rem;
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      font-size: 0.75rem;
+    }
+  }
+}
+
+// A10 Layout
+.dock-area--a10 {
+  align-self: flex-start;
+  width: 100%;
+  position: relative;
+  padding-top: 3rem;
+
+  .area-label {
+    margin-bottom: 1rem;
+  }
+
+  .a10-layout {
+    display: flex;
+    gap: 0.5rem;
+    position: relative;
+  }
+
+  .a10-main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: auto repeat(8, 1fr);
+    gap: 0.4rem;
+    align-items: center;
+    background: #f8f9fa;
+    padding: 0.5rem;
+    border-radius: 4px;
+
+    .duong-lu {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #7f8c8d;
+      padding: 0 0.3rem;
+      background: #ffeaa7;
+      border-radius: 3px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dock-slot:first-of-type {
+      margin-right: 100px;
+    }
+  }
+
+  .a10-side {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    min-width: auto;
+  }
+
+  .duong-trang-vang {
+    text-align: center;
+    padding: 0.3rem;
+    background: #ffeaa7;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+}
+
+// Factory Area - Ở giữa
+.factory-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1rem 0;
+  position: relative;
+  min-height: 100px;
+
+  &__background {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(230, 230, 230, 0.3),
+      rgba(230, 230, 230, 0.3) 10px,
+      rgba(200, 200, 200, 0.2) 10px,
+      rgba(200, 200, 200, 0.2) 20px
+    );
+    border: 2px dashed #bdc3c7;
+    border-radius: 8px;
+    opacity: 0.5;
+  }
+
+  &__content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__icon {
+    font-size: 2.5rem;
+    opacity: 0.4;
+  }
+
+  &__label {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #95a5a6;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  &__sublabel {
+    font-size: 0.75rem;
+    color: #bdc3c7;
+  }
+}
+
+// A8 Layout - Sát dưới
+.dock-area--a8 {
+  align-self: flex-end;
+  width: 100%;
+  position: relative;
+  padding-bottom: 80px;
+
+  .a8-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    position: relative;
+    padding: 0.75rem;
+
+    .duong-trung-thu,
+    .duong-kinh-do {
+      text-align: center;
+      padding: 0.25rem;
+      background: #ffeaa7;
+      border-radius: 3px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .a8-content-wrapper {
+      display: flex;
+      gap: 0.5rem;
+      align-items: stretch;
+    }
+
+    .a8-docks {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(20, 1fr);
+      gap: 0.3rem;
+    }
+
+    .a8-side-docks {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      min-width: 100px;
+    }
+  }
+
+  .gate-exit--left {
+    position: absolute;
+    left: 0px;
+    bottom: 2rem;
+    z-index: 10;
+  }
+}
+
+.area-separator {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0;
+
+  .separator-road {
+    width: 100%;
+    height: 2px;
+    background: repeating-linear-gradient(
+      90deg,
+      #dee2e6,
+      #dee2e6 10px,
+      transparent 10px,
+      transparent 20px
+    );
+  }
+}
+
+// Dock with label right (for D1, D2, D3)
+.dock-with-label-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .dock-slot {
+    flex: 1;
+  }
+
+  .dock-label-right {
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: #495057;
+    white-space: nowrap;
+    min-width: 35px;
+    text-align: left;
+  }
+}
+
+// Dock with label left (for A2, A3)
+.dock-with-label-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 50px;
+
+  .dock-label-left {
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: #495057;
+    white-space: nowrap;
+    min-width: 30px;
+    text-align: right;
+  }
+
+  .dock-slot {
+    flex: 1;
+  }
+}
+
+// Dock Slots - điều chỉnh kích thước
+.dock-slot {
+  position: relative;
+  background: white;
+  border: 2px solid #e9ecef;
+  border-radius: 4px;
+  padding: 0;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s;
+  cursor: pointer;
+  overflow: hidden;
+
+  &--compact {
+    min-height: 45px;
+  }
+
+  &--occupied {
+    border-color: #3498db;
+    background: linear-gradient(to bottom, #e3f2fd 0%, #ffffff 60%);
+    box-shadow: 0 2px 6px rgba(52, 152, 219, 0.2);
+  }
+
+  &--empty {
+    border-color: #dee2e6;
+    background: #fafafa;
+  }
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+  }
+
+  &-header {
+    padding: 0.4rem;
+    background: linear-gradient(to bottom, rgba(52, 152, 219, 0.1), transparent);
+    border-bottom: 1px solid #e9ecef;
+    text-align: center;
+
+    .dock-label {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: #495057;
+      white-space: nowrap;
+    }
+  }
+
+  &--compact &-header {
+    display: none;
+  }
+
+  &-footer {
+    padding: 0.4rem;
+    background: linear-gradient(to top, rgba(52, 152, 219, 0.1), transparent);
+    border-top: 1px solid #e9ecef;
+    text-align: center;
+
+    .dock-label {
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: #495057;
+      white-space: nowrap;
+    }
+  }
+
+  &-body {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 2px 1fr;
+    align-items: stretch;
+    padding: 0.3rem;
+    gap: 0.3rem;
+  }
+
+  .dock-position {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    padding: 0.25rem;
+    position: relative;
+
+    .vehicle-icon {
+      color: #3498db;
+    }
+
+    .vehicle-plate {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #2c3e50;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 100%;
+      line-height: 1.2;
+    }
+
+    .vehicle-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-top: 0.1rem;
+
+      &--normal { background: #27ae60; }
+      &--nearly_full { background: #f39c12; }
+      &--exceeded { background: #e74c3c; }
+    }
+
+    .position-empty {
+      font-size: 1.2rem;
+      color: #dee2e6;
+      font-weight: 300;
+    }
+  }
+
+  &--compact .dock-position {
+    gap: 0.15rem;
+    padding: 0.2rem;
+
+    .vehicle-plate {
+      font-size: 0.6rem;
+    }
+
+    .vehicle-indicator {
+      width: 6px;
+      height: 6px;
+    }
+
+    .position-empty {
+      font-size: 1rem;
+    }
+  }
+
+  .dock-divider {
+    width: 2px;
+    background: linear-gradient(to bottom, transparent 10%, #dee2e6 20%, #dee2e6 80%, transparent 90%);
+    height: 100%;
+    align-self: stretch;
+  }
+}
+
+// Waiting Area Compact
+.waiting-area-compact {
+  flex-shrink: 0;
+  padding: 0.5rem 0.75rem;
+  background: #fff3cd;
+  border: 1px solid #f39c12;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+
+  .waiting-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #856404;
+    margin-bottom: 0.4rem;
+  }
+
+  .waiting-list {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .waiting-item {
+    padding: 0.25rem 0.5rem;
+    background: white;
+    border: 1px solid #f39c12;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #2c3e50;
+  }
+}
+
+// Waiting Area in Header
+.waiting-area-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: #fff3cd;
+  border: 1px solid #f39c12;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  max-width: 600px;
+
+  .waiting-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #856404;
+  }
+
+  .waiting-list {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .waiting-item {
+    padding: 0.25rem 0.5rem;
+    background: white;
+    border: 1px solid #f39c12;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #2c3e50;
+  }
+}
+
+// Animation khi xe đến dock
+.dock-arrival-animation {
+  animation: dockPulse 2s ease-in-out infinite;
+  
+  .dock-item {
+    box-shadow: 0 0 20px rgba(52, 152, 219, 0.6);
+  }
+}
+
+@keyframes dockPulse {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.2);
+  }
+}
+
+// Animation nhấp nháy box-shadow
+@keyframes dockGlow {
+  0%, 100% {
+    box-shadow: 
+      0 0 10px rgba(52, 152, 219, 0.4),
+      0 0 20px rgba(52, 152, 219, 0.2),
+      0 0 30px rgba(52, 152, 219, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 0 20px rgba(52, 152, 219, 0.8),
+      0 0 40px rgba(52, 152, 219, 0.6),
+      0 0 60px rgba(52, 152, 219, 0.4),
+      inset 0 0 10px rgba(52, 152, 219, 0.2);
+  }
+}
+
+.dock-arrival-animation .dock-item {
+  animation: dockGlow 1.5s ease-in-out infinite;
+  border-color: #3498db !important;
+  background: linear-gradient(to bottom, #e3f2fd 0%, #ffffff 80%) !important;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 3px 10px rgba(231, 76, 60, 0.4);
+  }
+  50% {
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.8), 0 0 20px rgba(231, 76, 60, 0.4);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+// Responsive
+@media (max-width: 1200px) {
+  .dock-slot {
+    min-height: 55px;
+
+    &--compact {
+      min-height: 40px;
+    }
+
+    &-header .dock-label,
+    &-footer .dock-label {
+      font-size: 0.75rem;
+    }
+
+    .dock-position .vehicle-plate {
+      font-size: 0.65rem;
+    }
+  }
+
+  .dock-area--a10 .a10-main .dock-slot:first-of-type {
+    margin-right: 60px;
+  }
+
+  .factory-area__label {
+    font-size: 1rem;
+  }
+
+  .dock-area--a8 {
+    .a8-side-docks {
+      min-width: 90px;
+    }
+  }
+
+  .dock-with-label-left {
+    .dock-label-left {
+      font-size: 0.7rem;
+      min-width: 25px;
+    }
+  }
+}

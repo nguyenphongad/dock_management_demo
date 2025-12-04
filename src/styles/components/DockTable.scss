@@ -1,0 +1,174 @@
+.dock-table {
+  background: white;
+  padding: 0;
+  margin: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #ecf0f1;
+
+  &__title {
+    margin: 0;
+    padding: 1rem;
+    color: #2c3e50;
+    font-size: 1rem;
+    border-left: 4px solid #667eea;
+    background: #f8f9fa;
+    flex-shrink: 0;
+  }
+
+  &__kpis {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #fafbfc;
+    border-bottom: 2px solid #ecf0f1;
+    flex-shrink: 0;
+    max-height: 33%;
+    overflow-y: auto;
+
+    .mini-kpi-card {
+      background: white;
+      border-radius: 6px;
+      padding: 0.75rem;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: transform 0.2s;
+      border-left: 3px solid #3498db;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      &__icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+      }
+
+      &__content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      &__value {
+        font-size: 1.1rem;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 0.1rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      &__title {
+        font-size: 0.7rem;
+        color: #7f8c8d;
+        line-height: 1.2;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+    }
+  }
+
+  &__content {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+
+    th, td {
+      padding: 0.65rem 0.4rem;
+      text-align: left;
+      border-bottom: 1px solid #ecf0f1;
+    }
+
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #34495e;
+      font-size: 0.75rem;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      white-space: nowrap;
+    }
+
+    tbody tr:hover {
+      background: #f8f9fa;
+    }
+
+    .vehicle-cell {
+      max-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.75rem;
+    }
+
+    .performance-cell {
+      text-align: center;
+      font-weight: 600;
+      color: #27ae60;
+    }
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    margin-right: 0.4rem;
+
+    &--loading { background: #3498db; }
+    &--empty { background: #95a5a6; }
+  }
+
+  .badge {
+    padding: 0.15rem 0.4rem;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    white-space: nowrap;
+    display: inline-block;
+
+    &--loading { background: #d1ecf1; color: #0c5460; }
+    &--empty { background: #e2e3e5; color: #383d41; }
+    &--good { background: #d4edda; color: #155724; }
+    &--normal { background: #d4edda; color: #155724; }
+    &--warning { background: #fff3cd; color: #856404; }
+    &--nearly_full { background: #fff3cd; color: #856404; }
+    &--danger { background: #f8d7da; color: #721c24; }
+    &--exceeded { background: #f8d7da; color: #721c24; }
+  }
+
+  // Scrollbar cho khu vực KPI
+  &__kpis::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &__kpis::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  &__kpis::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 2px;
+
+    &:hover {
+      background: #999;
+    }
+  }
+}
