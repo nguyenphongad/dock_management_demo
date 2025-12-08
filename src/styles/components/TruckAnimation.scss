@@ -26,6 +26,34 @@
       animation: truckExit 0.3s ease-in-out;
     }
   }
+
+  &__body {
+    // Truck đang vào (entering) - màu xanh
+    &--entering {
+      .truck-container {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      }
+    }
+
+    // Truck đang docking (vừa đến dock) - màu xanh nhạt
+    &--docking {
+      .truck-container {
+        background: linear-gradient(135deg, #5dade2 0%, #3498db 100%);
+        animation: pulse-blue 2s infinite;
+      }
+      
+      .truck-plate {
+        animation: pulse 2s infinite;
+      }
+    }
+
+    // Truck đang exiting - màu cam
+    &--exiting {
+      .truck-container {
+        background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+      }
+    }
+  }
 }
 
 .truck-body {
@@ -151,5 +179,16 @@
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-blue {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 20px rgba(52, 152, 219, 0.8);
   }
 }

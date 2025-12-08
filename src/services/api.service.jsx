@@ -6,7 +6,7 @@ export const get = async (uri, token, params) => {
         if (token) {
             headers.Authorization = `Bearer ${token}`;
         }
-        // console.log('Headers:', headers.Authorization );
+        console.log('GET Request Headers:', headers);
 
         const res = await apiServiceInstance.get(uri, { headers, params });
         return res;
@@ -20,6 +20,7 @@ export const post = async (uri, data, token, isFormData = false) => {
         const headers = {};
         if (token) {
             headers.Authorization = `Bearer ${token}`;
+            console.log('POST Token used:', token.substring(0, 50) + '...');
         }
         
         // Thêm Content-Type nếu không phải FormData
@@ -27,9 +28,18 @@ export const post = async (uri, data, token, isFormData = false) => {
             headers['Content-Type'] = 'application/json';
         }
         
+        console.log('POST Request to:', uri);
+        console.log('POST Request Headers:', {
+            ...headers,
+            Authorization: headers.Authorization ? `Bearer ${headers.Authorization.substring(7, 57)}...` : 'None'
+        });
+        console.log('POST Request Body:', JSON.stringify(data, null, 2));
+        
         const res = await apiServiceInstance.post(uri, data, { headers });
+        console.log('POST Response:', res.data);
         return res.data; // Đảm bảo trả về res.data
     } catch (error) {
+        console.error('POST Error:', error.response?.data || error.message);
         throw error;
     }
 };

@@ -38,6 +38,7 @@ export const buildDockRequestBody = (warehouse, dateFrom = null, dateTo = null) 
             page: 1,
             pageSize: 100, // Tăng lên để lấy nhiều dữ liệu hơn
             group: "",
+            filter: "DockRegisterStatusID~eq~1026",
             filter: ""
         }
     };
@@ -82,6 +83,7 @@ export const parseDockApiResponse = (apiResponse) => {
         plateNumber: record.RegNo || record.VehicleNumber,
         dockNumber: extractDockNumber(record.DockName),
         dockName: record.DockName,
+        driverName: record.DriverName || record.Driver || null,
         status: mapStatusFromAPI(record.DockRegisterStatusID),
         registerDate: record.RegisterDate,
         gateInTime: record.GateIn,
@@ -114,11 +116,26 @@ export const parseDockApiResponse = (apiResponse) => {
 
 /**
  * Trích xuất số dock từ tên dock (VD: "BKD1-DockB01" -> 1)
+ * Sử dụng extractDockCode từ vehicleStorageManager để có kết quả nhất quán
  */
 const extractDockNumber = (dockName) => {
     if (!dockName) return null;
-    const match = dockName.match(/Dock[AB](\d+)/i);
-    return match ? parseInt(match[1]) : null;
+    
+    // Import function từ vehicleStorageManager để đảm bảo consistency
+    // Hoặc duplicate logic ở đây
+    
+    // Pattern: BKD#-Dock[A-D]## hoặc [A-D]##
+    const match1 = dockName.match(/Dock([A-D])(\d{1,2})/i);
+    if (match1) {
+        return parseInt(match1[2], 10);
+    }
+    
+    const match2 = dockName.match(/^([A-D])(\d{1,2})$/i);
+    if (match2) {
+        return parseInt(match2[2], 10);
+    }
+    
+    return null;
 };
 
 /**

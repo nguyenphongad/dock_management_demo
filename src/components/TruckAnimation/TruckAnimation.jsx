@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   calculateDockPositions, 
   createCompletePath, 
@@ -10,65 +10,81 @@ const TruckAnimation = ({
   fromGate, 
   toDock, 
   toGate,
+  phase = 'entering',
+  duration = 4000,
   onDockArrival,
   onDockDeparture,
   onAnimationComplete 
 }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [rotation, setRotation] = useState(0);
-  const [animationPhase, setAnimationPhase] = useState('entering');
+  const [animationPhase, setAnimationPhase] = useState(phase);
   const [isReady, setIsReady] = useState(false);
+  const [isDocked, setIsDocked] = useState(false); // Track if truck is docked
+  const hasAnimated = useRef(false);
+  const animationId = useRef(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsReady(true);
-    }, 1000);
+    }, 100);
 
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (!isReady) return;
+    if (!isReady || hasAnimated.current) return;
 
     const runAnimation = async () => {
       try {
+        hasAnimated.current = true;
+        
         const positions = calculateDockPositions();
-        
-        console.log('Dock positions:', positions);
-        
         const paths = createCompletePath(fromGate, toDock, toGate, positions);
         
-        if (!paths.entering.length || !paths.exiting.length) {
+        if (!paths.entering.length && !paths.exiting.length) {
           console.error('Failed to create paths');
           return;
         }
 
-        // Phase 1: Từ cổng vào đến dock - dừng xoay trước khi đến dock
-        setAnimationPhase('entering');
-        const smoothEnteringPath = smoothPath(paths.entering, 15);
-        await animateTruck(smoothEnteringPath, 3000, true); // stopRotationBeforeEnd = true
-        
-        // Khi đến dock, trigger animation cho dock
-        if (onDockArrival) {
-          onDockArrival(toDock);
-        }
-        
-        // Phase 2: Đỗ tại dock - hoàn toàn đứng yên
-        setAnimationPhase('docking');
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        
-        // Khi rời dock, tắt animation
-        if (onDockDeparture) {
-          onDockDeparture(toDock);
-        }
-        
-        // Phase 3: Từ dock ra cổng
-        setAnimationPhase('exiting');
-        const smoothExitingPath = smoothPath(paths.exiting, 15);
-        await animateTruck(smoothExitingPath, 3000, true);
-        
-        if (onAnimationComplete) {
-          onAnimationComplete();
+        if (phase === 'entering') {
+          // Xe đang vào dock
+          console.log(`🚛 ${plateNumber}: Starting entering animation to ${toDock}`);
+          setAnimationPhase('entering');
+          const smoothEnteringPath = smoothPath(paths.entering, 15);
+          await animateTruck(smoothEnteringPath, duration, true);
+          
+          console.log(`✅ ${plateNumber}: Arrived at ${toDock}`);
+          
+          // Khi đến dock - đổi sang docking phase NHƯNG KHÔNG remove component
+          setAnimationPhase('docking');
+          setIsDocked(true);
+          
+          if (onDockArrival) {
+            onDockArrival(toDock);
+          }
+          
+          // KHÔNG gọi onAnimationComplete để component không bị remove
+          // if (onAnimationComplete) {
+          //   onAnimationComplete();
+          // }
+        } else if (phase === 'exiting') {
+          // Xe đang ra cổng
+          console.log(`🚛 ${plateNumber}: Starting exiting animation from ${toDock}`);
+          setAnimationPhase('exiting');
+          const smoothExitingPath = smoothPath(paths.exiting, 15);
+          await animateTruck(smoothExitingPath, duration, true);
+          
+          console.log(`✅ ${plateNumber}: Exited to gate`);
+          
+          if (onDockDeparture) {
+            onDockDeparture(toDock);
+          }
+          
+          // Chỉ remove component khi xe ra cổng xong
+          if (onAnimationComplete) {
+            onAnimationComplete();
+          }
         }
       } catch (error) {
         console.error('Animation error:', error);
@@ -76,13 +92,19 @@ const TruckAnimation = ({
     };
 
     runAnimation();
-  }, [isReady, fromGate, toDock, toGate]);
+
+    return () => {
+      if (animationId.current) {
+        cancelAnimationFrame(animationId.current);
+      }
+    };
+  }, [isReady, phase]);
 
   const animateTruck = (path, duration, stopRotationBeforeEnd = false) => {
     return new Promise((resolve) => {
       const startTime = Date.now();
       let lockedRotation = null;
-      const isA10Path = path.length > 0 && Math.abs(path[0].y - path[path.length - 1].y) > 50; // Nếu di chuyển dọc nhiều = A10
+      const isA10Path = path.length > 0 && Math.abs(path[0].y - path[path.length - 1].y) > 50;
       
       const animate = () => {
         const elapsed = Date.now() - startTime;
@@ -102,12 +124,9 @@ const TruckAnimation = ({
         const x = current.x + (next.x - current.x) * localProgress;
         const y = current.y + (next.y - current.y) * localProgress;
         
-        // Logic xoay: dừng xoay sớm hơn cho A10
         let angle = rotation;
         
         if (stopRotationBeforeEnd) {
-          // Cho A10 (C, D docks): dừng xoay từ 70% quãng đường
-          // Cho A8 (A, B docks): dừng xoay từ 80% quãng đường
           const stopThreshold = isA10Path ? 0.7 : 0.8;
           
           if (progress < stopThreshold) {
@@ -132,7 +151,7 @@ const TruckAnimation = ({
         setRotation(angle);
         
         if (progress < 1) {
-          requestAnimationFrame(animate);
+          animationId.current = requestAnimationFrame(animate);
         } else {
           resolve();
         }
@@ -146,11 +165,11 @@ const TruckAnimation = ({
 
   return (
     <div 
-      className={`truck-animation truck-animation--${animationPhase}`}
+      className={`truck-animation truck-animation--${animationPhase} ${isDocked ? 'truck-animation--docked' : ''}`}
       style={{
         transform: `translate(${position.x}px, ${position.y}px) rotate(${rotation}deg)`,
         transformOrigin: 'center center',
-        transition: animationPhase === 'docking' ? 'none' : 'transform 0.05s linear'
+        transition: 'none'
       }}
     >
       <div className="truck-body">

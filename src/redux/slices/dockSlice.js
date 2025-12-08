@@ -1,5 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { fetchDockData, fetchDockDataByDateRange } from '../thunks/dockThunk';
+import { 
+  fetchDockData, 
+  fetchDockDataFromAPI,
+  fetchDockDataFromSample,
+  fetchDockDataByDateRangeFromSample,
+  // Không cần import fetchDockDataByDateRange vì nó là alias
+} from '../thunks/dockThunk';
 
 // Initial state cho mỗi warehouse
 const warehouseInitialState = {
@@ -75,67 +81,73 @@ const dockSlice = createSlice({
   },
   
   extraReducers: (builder) => {
-    // Xử lý fetchDockData
+    // Xử lý fetchDockData wrapper (thunk mới - tự động chọn API/Sample)
     builder
-      .addCase(fetchDockData.pending, (state, action) => {
-        const warehouse = action.meta.arg.warehouse;
-        if (state[warehouse]) {
-          state[warehouse].loading = true;
-          state[warehouse].error = null;
-        }
+      .addCase(fetchDockData.pending, (state) => {
+        state.loading = true;
+        state.error = null;
       })
       .addCase(fetchDockData.fulfilled, (state, action) => {
-        const { warehouse, data, timestamp } = action.payload;
-        if (state[warehouse]) {
-          state[warehouse].vehicles = data.vehicles || [];
-          state[warehouse].docks = data.docks || [];
-          state[warehouse].kpis = {
-            ...state[warehouse].kpis,
-            ...data.kpis
-          };
-          state[warehouse].lastUpdated = timestamp;
-          state[warehouse].loading = false;
-          state[warehouse].error = null;
-        }
+        state.loading = false;
+        state.data[action.payload.warehouse] = action.payload.data;
+        state.lastUpdated = action.payload.timestamp;
+        state.error = null;
       })
       .addCase(fetchDockData.rejected, (state, action) => {
-        const warehouse = action.meta.arg.warehouse;
-        if (state[warehouse]) {
-          state[warehouse].loading = false;
-          state[warehouse].error = action.payload?.message || 'Mất kết nối';
-        }
-      });
-    
-    // Xử lý fetchDockDataByDateRange
-    builder
-      .addCase(fetchDockDataByDateRange.pending, (state, action) => {
-        const warehouse = action.meta.arg.warehouse;
-        if (state[warehouse]) {
-          state[warehouse].loading = true;
-          state[warehouse].error = null;
-        }
+        state.loading = false;
+        state.error = action.payload;
       })
-      .addCase(fetchDockDataByDateRange.fulfilled, (state, action) => {
-        const { warehouse, data, timestamp } = action.payload;
-        if (state[warehouse]) {
-          state[warehouse].vehicles = data.vehicles || [];
-          state[warehouse].docks = data.docks || [];
-          state[warehouse].kpis = {
-            ...state[warehouse].kpis,
-            ...data.kpis
-          };
-          state[warehouse].lastUpdated = timestamp;
-          state[warehouse].loading = false;
-          state[warehouse].error = null;
-        }
+      
+      // Xử lý fetchDockDataFromAPI (API thật)
+      .addCase(fetchDockDataFromAPI.pending, (state) => {
+        state.loading = true;
+        state.error = null;
       })
-      .addCase(fetchDockDataByDateRange.rejected, (state, action) => {
-        const warehouse = action.meta.arg.warehouse;
-        if (state[warehouse]) {
-          state[warehouse].loading = false;
-          state[warehouse].error = action.payload?.message || 'Không thể tải dữ liệu';
-        }
+      .addCase(fetchDockDataFromAPI.fulfilled, (state, action) => {
+        state.loading = false;
+        state.data[action.payload.warehouse] = action.payload.data;
+        state.lastUpdated = action.payload.timestamp;
+        state.error = null;
+      })
+      .addCase(fetchDockDataFromAPI.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      
+      // Xử lý fetchDockDataFromSample
+      .addCase(fetchDockDataFromSample.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchDockDataFromSample.fulfilled, (state, action) => {
+        state.loading = false;
+        state.data[action.payload.warehouse] = action.payload.data;
+        state.lastUpdated = action.payload.timestamp;
+        state.error = null;
+      })
+      .addCase(fetchDockDataFromSample.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      
+      // Xử lý fetchDockDataByDateRangeFromSample
+      .addCase(fetchDockDataByDateRangeFromSample.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchDockDataByDateRangeFromSample.fulfilled, (state, action) => {
+        state.loading = false;
+        state.data[action.payload.warehouse] = action.payload.data;
+        state.lastUpdated = action.payload.timestamp;
+        state.error = null;
+      })
+      .addCase(fetchDockDataByDateRangeFromSample.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
+      
+      // COMMENT: Xóa các case cũ cho fetchDockData và fetchDockDataByDateRange
+      // vì giờ chúng là wrapper thunk, không phải async thunk riêng
   }
 });
 

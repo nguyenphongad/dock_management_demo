@@ -1,6 +1,44 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { 
+  getVehiclesFromStorage, 
+  categorizeVehiclesByTime,
+  extractDockCode 
+} from '../../utils/vehicleStorageManager';
 
 const DockTable = ({ docks, kpis }) => {
+  const [insideWarehouseVehicles, setInsideWarehouseVehicles] = useState([]);
+
+  useEffect(() => {
+    const updateVehiclesList = () => {
+      const storedVehicles = getVehiclesFromStorage();
+      const categorized = categorizeVehiclesByTime(storedVehicles);
+      
+      // Lấy tất cả xe đang ở trong kho (đã vào cổng nhưng chưa ra cổng)
+      const insideVehicles = [
+        ...categorized.entering,
+        ...categorized.loading
+      ].map(v => ({
+        ...v,
+        dockCode: extractDockCode(v.DockName),
+        statusText: categorized.entering.some(ev => ev.ID === v.ID) 
+          ? 'Đang vào' 
+          : 'Đang làm hàng'
+      }));
+      
+      setInsideWarehouseVehicles(insideVehicles);
+      
+      console.log('Inside warehouse vehicles:', insideVehicles.length);
+    };
+    
+    // Initial load
+    updateVehiclesList();
+    
+    // Update mỗi 5 giây
+    const interval = setInterval(updateVehiclesList, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   const miniKpis = [
     { 
       title: 'Currently Loading', 
@@ -56,7 +94,64 @@ const DockTable = ({ docks, kpis }) => {
         ))}
       </div>
 
+      {/* Bảng xe đang trong kho */}
+      <div className="dock-table__vehicles-section">
+        <h4 className="vehicles-section__title">
+          🚛 Xe đang trong kho ({insideWarehouseVehicles.length})
+        </h4>
+        <div className="vehicles-section__content">
+          {insideWarehouseVehicles.length === 0 ? (
+            <div className="no-vehicles">Không có xe nào trong kho</div>
+          ) : (
+            <table className="vehicles-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Biển số</th>
+                  <th>Dock</th>
+                  <th>Tài xế</th>
+                  <th>Trạng thái</th>
+                  <th>Vào cổng</th>
+                </tr>
+              </thead>
+              <tbody>
+                {insideWarehouseVehicles.map((vehicle) => (
+                  <tr key={vehicle.ID}>
+                    <td className="cell-id">{vehicle.ID}</td>
+                    <td className="cell-regno">
+                      <strong>{vehicle.RegNo}</strong>
+                    </td>
+                    <td className="cell-dock">
+                      <span className="dock-badge">
+                        {vehicle.dockCode || vehicle.DockName || '-'}
+                      </span>
+                    </td>
+                    <td className="cell-driver">{vehicle.DriverName || '-'}</td>
+                    <td className="cell-status">
+                      <span className={`status-badge ${vehicle.statusText === 'Đang vào' ? 'status-badge--entering' : 'status-badge--loading'}`}>
+                        {vehicle.statusText}
+                      </span>
+                    </td>
+                    <td className="cell-time">
+                      {vehicle.GateIn 
+                        ? new Date(vehicle.GateIn).toLocaleString('vi-VN', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                        : '-'
+                      }
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* Bảng tổng quan docks */}
       <div className="dock-table__content">
+        <h4 className="dock-overview__title">📊 Tổng quan Docks</h4>
         <table>
           <thead>
             <tr>

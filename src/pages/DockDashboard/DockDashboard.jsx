@@ -9,6 +9,8 @@ import DockMap from '../../components/DockMap/DockMap';
 import DockTable from '../../components/DockTable/DockTable';
 import AccountMenu from '../../components/AccountMenu/AccountMenu';
 import ProfileModal from '../../components/ProfileModal/ProfileModal';
+import ApiModeSelector from '../../components/ApiModeSelector';
+import WaitingAreaTable from '../../components/WaitingAreaTable/WaitingAreaTable';
 
 const DockDashboard = () => {
   const dispatch = useDispatch();
@@ -101,6 +103,8 @@ const DockDashboard = () => {
             <option value={WAREHOUSE_TYPES.NKD}>Kho NKD</option>
           </select>
           
+          <ApiModeSelector />
+          
           <button onClick={handleManualRefresh} className="btn-icon" title="Cập nhật ngay">
             <MdRefresh size={18} />
             <span>Refresh</span>
@@ -139,7 +143,6 @@ const DockDashboard = () => {
         
         <div className="map-and-table-container">
           <DockMap 
-            vehicles={warehouseData.vehicles} 
             warehouse={selectedWarehouse}
           />
           
@@ -148,6 +151,8 @@ const DockDashboard = () => {
             kpis={warehouseData.kpis}
           />
         </div>
+
+        <WaitingAreaTable />
       </div>
 
       <AccountMenu 
