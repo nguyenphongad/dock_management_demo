@@ -149,7 +149,7 @@ const DockTable = ({ docks, kpis }) => {
         </div>
       </div>
 
-      {/* Bảng tổng quan docks */}
+      {/* Bảng tổng quan docks
       <div className="dock-table__content">
         <h4 className="dock-overview__title">📊 Tổng quan Docks</h4>
         <table>
@@ -185,7 +185,7 @@ const DockTable = ({ docks, kpis }) => {
             ))}
           </tbody>
         </table>
-      </div>
+      </div> */}
     </div>
   );
 };
