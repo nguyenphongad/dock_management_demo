@@ -15,7 +15,7 @@ export const fetchDockData = createAsyncThunk(
       await simulateApiDelay(500);
       
       // Fetch data từ public folder
-      const response = await fetch('/data/data_sample.json');
+      const response = await fetch('/src/data/data_sample.json');
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
