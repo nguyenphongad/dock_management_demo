@@ -36,9 +36,9 @@ export const buildDockRequestBody = (warehouse, dateFrom = null, dateTo = null) 
         request: {
             sort: "",
             page: 1,
-            pageSize: 100, // Tăng lên để lấy nhiều dữ liệu hơn
+            pageSize: 200, // Tăng lên để lấy nhiều dữ liệu hơn
             group: "",
-            filter: "DockRegisterStatusID~eq~1026",
+            filter: "",
             filter: ""
         }
     };
