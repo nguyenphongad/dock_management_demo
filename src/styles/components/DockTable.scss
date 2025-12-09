@@ -1,21 +1,21 @@
 .dock-table {
-  background: white;
+  background: #2c3e50;
   padding: 0;
   margin: 0;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   height: 100%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid #ecf0f1;
+  border-left: 1px solid #556b7f;
 
   &__title {
     margin: 0;
     padding: 1rem;
-    color: #2c3e50;
+    color: #ecf0f1;
     font-size: 1rem;
     border-left: 4px solid #667eea;
-    background: #f8f9fa;
+    background: #34495e;
     flex-shrink: 0;
   }
 
@@ -24,17 +24,17 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;
     padding: 0.75rem;
-    background: #fafbfc;
-    border-bottom: 2px solid #ecf0f1;
+    background: #3d4f5f;
+    border-bottom: 2px solid #556b7f;
     flex-shrink: 0;
     max-height: 33%;
     overflow-y: auto;
 
     .mini-kpi-card {
-      background: white;
+      background: #45566d;
       border-radius: 6px;
       padding: 0.75rem;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -43,7 +43,7 @@
 
       &:hover {
         transform: translateY(-1px);
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
       }
 
       &__icon {
@@ -59,7 +59,7 @@
       &__value {
         font-size: 1.1rem;
         font-weight: bold;
-        color: #2c3e50;
+        color: #ecf0f1;
         margin-bottom: 0.1rem;
         white-space: nowrap;
         overflow: hidden;
@@ -68,7 +68,7 @@
 
       &__title {
         font-size: 0.7rem;
-        color: #7f8c8d;
+        color: #bdc3c7;
         line-height: 1.2;
         display: -webkit-box;
         -webkit-line-clamp: 2;
@@ -96,9 +96,9 @@
     }
 
     th {
-      background: #f8f9fa;
+      background: #34495e;
       font-weight: 600;
-      color: #34495e;
+      color: #ecf0f1;
       font-size: 0.75rem;
       position: sticky;
       top: 0;
@@ -106,8 +106,12 @@
       white-space: nowrap;
     }
 
-    tbody tr:hover {
-      background: #f8f9fa;
+    tbody tr {
+      color: #ecf0f1;
+
+      &:hover {
+        background: #3d4f5f;
+      }
     }
 
     .vehicle-cell {
@@ -176,4 +180,69 @@
 
 .dock-table__vehicles-section{
   padding: 10px;
+
+  .vehicles-section__title {
+    color: #ecf0f1;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 10px 0;
+    padding: 0 5px;
+  }
+
+  .vehicles-section__content {
+    .no-vehicles {
+      color: #bdc3c7;
+      text-align: center;
+      padding: 20px;
+      font-style: italic;
+    }
+
+    .vehicles-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.75rem;
+
+      th {
+        background: #34495e;
+        color: #ecf0f1;
+        padding: 8px 5px;
+        text-align: left;
+        font-weight: 600;
+        border-bottom: 1px solid #556b7f;
+      }
+
+      td {
+        padding: 8px 5px;
+        color: #ecf0f1;
+        border-bottom: 1px solid #3d4f5f;
+
+        &.cell-id {
+          color: #bdc3c7;
+        }
+
+        &.cell-regno strong {
+          color: #ecf0f1;
+        }
+
+        &.cell-dock {
+          .dock-badge {
+            color: #5dade2;
+            font-weight: 500;
+          }
+        }
+
+        &.cell-driver {
+          color: #ecf0f1;
+        }
+
+        &.cell-status {
+          color: #ecf0f1;
+        }
+      }
+
+      tbody tr:hover {
+        background: #3d4f5f;
+      }
+    }
+  }
 }

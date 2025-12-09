@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { MdExitToApp, MdFactory } from 'react-icons/md';
 import { FiTruck } from 'react-icons/fi';
-import { 
-  getVehiclesFromStorage, 
+import {
+  getVehiclesFromStorage,
   categorizeVehiclesByTime,
   determineGateFromDock,
   extractDockCode,
@@ -17,15 +17,15 @@ const DockMap = ({ vehicles = [], warehouse }) => {
   const [activeDocks, setActiveDocks] = useState(new Set());
   const [dockingTrucks, setDockingTrucks] = useState(new Map());
   const processedVehicleIds = useRef(new Set());
-  
+
   useEffect(() => {
     const updateAnimations = () => {
       const storedVehicles = getVehiclesFromStorage();
-      
+
       if (storedVehicles.length === 0) return;
-      
+
       const categorized = categorizeVehiclesByTime(storedVehicles);
-      
+
       // Cập nhật docking trucks (xe đang đỗ tại dock)
       const dockingMap = new Map();
       categorized.loading.forEach(vehicle => {
@@ -39,7 +39,7 @@ const DockMap = ({ vehicles = [], warehouse }) => {
         }
       });
       setDockingTrucks(dockingMap);
-      
+
       // Animation cho xe đang entering
       const enteringAnimations = categorized.entering
         .filter(vehicle => !processedVehicleIds.current.has(`entering_${vehicle.ID}`))
@@ -47,9 +47,9 @@ const DockMap = ({ vehicles = [], warehouse }) => {
           const dockCode = extractDockCode(vehicle.DockName);
           const fromGate = determineGateFromDock(vehicle.DockName);
           const animationInfo = calculateAnimationDuration(vehicle);
-          
+
           processedVehicleIds.current.add(`entering_${vehicle.ID}`);
-          
+
           return {
             id: `entering_${vehicle.ID}`,
             vehicleId: vehicle.ID,
@@ -62,7 +62,7 @@ const DockMap = ({ vehicles = [], warehouse }) => {
             duration: animationInfo?.duration || 4000
           };
         });
-      
+
       // Animation cho xe đang exiting
       const exitingAnimations = categorized.exiting
         .filter(vehicle => !processedVehicleIds.current.has(`exiting_${vehicle.ID}`))
@@ -70,9 +70,9 @@ const DockMap = ({ vehicles = [], warehouse }) => {
           const dockCode = extractDockCode(vehicle.DockName);
           const toGate = determineGateFromDock(vehicle.DockName);
           const animationInfo = calculateAnimationDuration(vehicle);
-          
+
           processedVehicleIds.current.add(`exiting_${vehicle.ID}`);
-          
+
           return {
             id: `exiting_${vehicle.ID}`,
             vehicleId: vehicle.ID,
@@ -85,49 +85,49 @@ const DockMap = ({ vehicles = [], warehouse }) => {
             duration: animationInfo?.duration || 4000
           };
         });
-      
+
       setActiveAnimations(prev => {
         const newAnimations = [...enteringAnimations, ...exitingAnimations];
         const existingIds = new Set(prev.map(a => a.id));
         const filtered = newAnimations.filter(a => !existingIds.has(a.id));
-        
+
         return filtered.length > 0 ? [...prev, ...filtered] : prev;
       });
-      
+
       const loadingDockCodes = new Set(
         categorized.loading.map(v => extractDockCode(v.DockName)).filter(Boolean)
       );
       setActiveDocks(loadingDockCodes);
-      
+
       categorized.completed.forEach(v => {
         processedVehicleIds.current.delete(`entering_${v.ID}`);
         processedVehicleIds.current.delete(`exiting_${v.ID}`);
       });
     };
-    
+
     updateAnimations();
     const interval = setInterval(updateAnimations, 30000);
-    
+
     return () => {
       clearInterval(interval);
       processedVehicleIds.current.clear();
     };
   }, []);
-  
+
   const handleAnimationComplete = (animationId) => {
     console.log('Animation completed:', animationId);
-    
+
     // Chỉ remove animation nếu là exiting phase
     // Entering phase sẽ giữ lại để hiển thị truck ở dock
     if (animationId.includes('exiting_')) {
       setActiveAnimations(prev => prev.filter(a => a.id !== animationId));
     }
   };
-  
+
   const handleDockArrival = (dockCode) => {
     setActiveDocks(prev => new Set([...prev, dockCode]));
   };
-  
+
   const handleDockDeparture = (dockCode) => {
     setTimeout(() => {
       setActiveDocks(prev => {
@@ -177,6 +177,7 @@ const DockMap = ({ vehicles = [], warehouse }) => {
       </div>
 
       <div className="dock-map__content">
+
         {activeAnimations.map(animation => (
           <TruckAnimation
             key={animation.id}
@@ -200,103 +201,111 @@ const DockMap = ({ vehicles = [], warehouse }) => {
           />
         ))}
 
-        <div className="dock-area dock-area--a10">
-          <div className="gate-exit gate-exit--top">
-            <MdExitToApp size={18} />
-            <span>CỔNG 3</span>
-          </div>
-          <div className="area-label">
-            <span className="area-name">Đường Số 10 - VSIP 1</span>
-          </div>
-          <div className="a10-layout">
-            <div className="a10-main">
-              <div className="duong-lu">ĐƯỜNG LƯ</div>
-              {a10MainDocks.map(dock => (
-                <div key={dock} className={activeDocks.has(dock) ? 'dock-arrival-animation' : ''}>
-                  <DockItem
-                    dockCode={dock}
-                    vehicles={getVehiclesAtDock(dock)}
-                    orientation="vertical"
-                    labelPosition="top"
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="a10-side">
-              {a10SideDocks.map(dock => (
-                <div key={dock} className={activeDocks.has(dock) ? 'dock-arrival-animation' : ''}>
-                  <DockItem
-                    dockCode={dock}
-                    vehicles={getVehiclesAtDock(dock)}
-                    orientation="horizontal"
-                    labelPosition="right"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="duong-trang-vang">ĐƯỜNG TRẮNG VÀNG</div>
-        </div>
 
-        <div className="area-separator">
-          <div className="separator-road"></div>
-        </div>
-
-        <div className="factory-area">
-          <div className="factory-area__background"></div>
-          <div className="factory-area__content">
-            <div className="factory-area__icon">
-              <MdFactory />
-            </div>
-            <div className="factory-area__label">Factory Area</div>
-            <div className="factory-area__sublabel">Khu vực sản xuất</div>
-          </div>
-        </div>
-
-        <div className="dock-area dock-area--a8">
-          <div className="gate-exit gate-exit--left">
-            <MdExitToApp size={18} />
-            <span>CỔNG 1</span>
-          </div>
-          <div className="area-label">
-            <span className="area-name">Đường Số 8 - VSIP 1</span>
-          </div>
-          <div className="a8-layout">
-            <div className="duong-trung-thu">ĐƯỜNG TRUNG THƯ</div>
-            <div className="a8-content-wrapper">
-              <div className="a8-docks">
-                {a8MainDocks.map(dock => (
-                  <div key={dock} className={activeDocks.has(dock) ? 'dock-arrival-animation' : ''}>
-                    <DockItem
-                      dockCode={dock}
-                      vehicles={getVehiclesAtDock(dock)}
-                      isCompact={true}
-                      orientation="vertical"
-                      labelPosition="bottom"
-                    />
-                  </div>
-                ))}
+        <div className="ABC">
+          <div className="duong-lu duong-lu--full" style={{ left: '44px' }}>ĐƯỜNG LƯ</div>
+          <div className="map">
+            <div className="dock-area dock-area--a10">
+              <div className="gate-exit gate-exit--top" style={{ right: '-74px', }}>
+                <MdExitToApp size={18} />
+                <span>CỔNG 3</span>
               </div>
-              <div className="a8-side-docks">
-                {a8SideDocks.map(dock => (
-                  <div key={dock} className={activeDocks.has(dock) ? 'dock-arrival-animation' : ''}>
-                    <DockItem
-                      dockCode={dock}
-                      vehicles={getVehiclesAtDock(dock)}
-                      isCompact={true}
-                      orientation="horizontal"
-                      labelPosition="left"
-                    />
-                  </div>
-                ))}
+              <div className="area-label">
+                <span className="area-name">Đường Số 10 - VSIP 1</span>
+              </div>
+              <div className="a10-layout">
+                <div className="a10-main">
+                  {/* <div className="duong-lu">ĐƯỜNG LƯ</div> */}
+                  {a10MainDocks.map(dock => (
+                    <div key={dock} className={activeDocks.has(dock) ? 'dock-arrival-animation' : ''}>
+                      <DockItem
+                        dockCode={dock}
+                        vehicles={getVehiclesAtDock(dock)}
+                        orientation="vertical"
+                        labelPosition="top"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="a10-side">
+                  {a10SideDocks.map(dock => (
+                    <div key={dock} className={activeDocks.has(dock) ? 'dock-arrival-animation' : ''}>
+                      <DockItem
+                        dockCode={dock}
+                        vehicles={getVehiclesAtDock(dock)}
+                        orientation="horizontal"
+                        labelPosition="right"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="duong-trang-vang">ĐƯỜNG TRẮNG VÀNG</div>
+            </div>
+
+            <div className="area-separator">
+              <div className="separator-road"></div>
+            </div>
+
+            <div className="factory-area">
+              {/* <div className="duong-lu">ĐƯỜNG LƯ</div> */}
+              <div className="factory-area__background"></div>
+              <div className="factory-area__content">
+                <div className="factory-area__icon">
+                  <MdFactory />
+                </div>
+                <div className="factory-area__label">Factory Area</div>
+                <div className="factory-area__sublabel">Khu vực sản xuất</div>
               </div>
             </div>
-            <div className="duong-kinh-do">ĐƯỜNG KINH ĐÔ</div>
+
+            <div className="dock-area dock-area--a8">
+              <div className="gate-exit gate-exit--left" style={{ left: '-74px', }}>
+                <MdExitToApp size={18} />
+                <span>CỔNG 1</span>
+              </div>
+              <div className="area-label">
+                <span className="area-name">Đường Số 8 - VSIP 1</span>
+              </div>
+              <div className="a8-layout">
+                <div className="duong-trung-thu">ĐƯỜNG TRUNG THƯ</div>
+                <div className="a8-content-wrapper">
+                  <div className="a8-docks">
+                    {a8MainDocks.map(dock => (
+                      <div key={dock} className={activeDocks.has(dock) ? 'dock-arrival-animation' : ''}>
+                        <DockItem
+                          dockCode={dock}
+                          vehicles={getVehiclesAtDock(dock)}
+                          isCompact={true}
+                          orientation="vertical"
+                          labelPosition="bottom"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="a8-side-docks">
+                    {a8SideDocks.map(dock => (
+                      <div key={dock} className={activeDocks.has(dock) ? 'dock-arrival-animation' : ''}>
+                        <DockItem
+                          dockCode={dock}
+                          vehicles={getVehiclesAtDock(dock)}
+                          isCompact={true}
+                          orientation="horizontal"
+                          labelPosition="left"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="duong-kinh-do">ĐƯỜNG KINH ĐÔ</div>
+              </div>
+              <div className="gate-exit gate-exit--right" style={{ right: '-74px', }}>
+                <MdExitToApp size={18} />
+                <span>CỔNG 2</span>
+              </div>
+            </div>
           </div>
-          <div className="gate-exit gate-exit--right">
-            <MdExitToApp size={18} />
-            <span>CỔNG 2</span>
-          </div>
+          <div className="duong-lu duong-lu--full" style={{ right: '44px', top:'49px', bottom: '341px' }}>ĐƯỜNG LƯ</div>
         </div>
       </div>
     </div>
