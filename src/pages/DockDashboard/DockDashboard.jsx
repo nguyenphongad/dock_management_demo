@@ -5,7 +5,6 @@ import { REFRESH_INTERVAL } from '../../utils/constants';
 import DashboardHeader from '../../components/DashboardHeader/DashboardHeader';
 import DockMap from '../../components/DockMap/DockMap';
 import DockTable from '../../components/DockTable/DockTable';
-import WaitingAreaTable from '../../components/WaitingAreaTable/WaitingAreaTable';
 
 const DockDashboard = () => {
   const dispatch = useDispatch();
@@ -48,14 +47,15 @@ const DockDashboard = () => {
         )}
         
         <div className="map-and-table-container">
-          <DockMap warehouse={selectedWarehouse} />
+          <DockMap 
+            warehouse={selectedWarehouse}
+            kpis={warehouseData.kpis}
+          />
           <DockTable 
             docks={warehouseData.docks}
             kpis={warehouseData.kpis}
           />
         </div>
-
-        <WaitingAreaTable />
       </div>
     </div>
   );

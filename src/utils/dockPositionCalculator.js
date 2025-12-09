@@ -155,6 +155,20 @@ export const calculatePositionOffset = (position, dockPos) => {
 };
 
 /**
+ * Xác định đường đi chính dựa trên dock
+ */
+const getRoadForDock = (dockCode) => {
+  // Tất cả dock đều đi trên ĐƯỜNG SỐ 8 - VSIP 1
+  if (dockCode.startsWith('B') || dockCode.startsWith('A')) {
+    return 'DUONG_SO_8_DUOI'; // Đường số 8 phía dưới (cho dock B và A)
+  }
+  if (dockCode.startsWith('C') || dockCode.startsWith('D')) {
+    return 'DUONG_SO_8_TREN'; // Đường số 8 phía trên (cho dock C và D)
+  }
+  return 'DUONG_SO_8_DUOI';
+};
+
+/**
  * Tạo đường đi từ cổng đến dock với vị trí cụ thể
  */
 export const createPathToDock = (fromGate, toDock, positions, targetPosition = 1) => {
@@ -171,16 +185,64 @@ export const createPathToDock = (fromGate, toDock, positions, targetPosition = 1
   }
 
   const finalPos = calculatePositionOffset(targetPosition, dockPos);
+  const roadType = getRoadForDock(toDock);
 
-  if (dockPos.area === 'A8') {
-    const roadY = positions.roads.DUONG_TRUNG_THU?.y || (dockPos.y - 50);
+  // CỔNG 1 hoặc CỔNG 2 -> Dock B (B1-B20) hoặc A (A2, A3)
+  if ((fromGate === 'CONG_1' || fromGate === 'CONG_2') && 
+      (toDock.startsWith('B') || toDock.startsWith('A'))) {
     
-    path.push({ x: gatePos.x, y: gatePos.y });
-    path.push({ x: gatePos.x, y: roadY });
-    path.push({ x: finalPos.x, y: roadY });
-    path.push({ x: finalPos.x, y: finalPos.y });
-  } else if (dockPos.area === 'A10') {
-    const roadY = positions.roads.DUONG_LU?.y || (dockPos.y + 50);
+    // Lấy vị trí đường số 8 phía dưới dock
+    const roadY = positions.roads.DUONG_KINH_DO?.y || (dockPos.y + 60);
+    
+    if (toDock.startsWith('B')) {
+      // Dock B: Đi thẳng trên đường số 8, rồi rẽ lên dock
+      path.push({ x: gatePos.x, y: gatePos.y }); // Từ cổng
+      path.push({ x: gatePos.x, y: roadY }); // Xuống đường số 8
+      path.push({ x: finalPos.x, y: roadY }); // Đi dọc đường số 8
+      path.push({ x: finalPos.x, y: finalPos.y }); // Rẽ lên dock
+    } else if (toDock.startsWith('A')) {
+      // Dock A2, A3: Đi trên đường số 8, rồi rẽ trái vào dock
+      const turnPointX = dockPos.x - 30; // Điểm rẽ trước khi vào dock
+      
+      path.push({ x: gatePos.x, y: gatePos.y }); // Từ cổng
+      path.push({ x: gatePos.x, y: roadY }); // Xuống đường số 8
+      path.push({ x: turnPointX, y: roadY }); // Đi dọc đường số 8
+      path.push({ x: turnPointX, y: finalPos.y }); // Rẽ trái
+      path.push({ x: finalPos.x, y: finalPos.y }); // Vào dock
+    }
+  }
+  
+  // CỔNG 3 -> Dock C (C1-C8) hoặc D (D1, D2, D3)
+  else if (fromGate === 'CONG_3' && 
+           (toDock.startsWith('C') || toDock.startsWith('D'))) {
+    
+    // Lấy vị trí đường số 8 phía trên dock (ĐƯỜNG TRẮNG VÀNG)
+    const roadY = positions.roads.DUONG_TRANG_VANG?.y || (dockPos.y - 60);
+    
+    if (toDock.startsWith('C')) {
+      // Dock C: Đi thẳng trên đường số 8, rồi rẽ xuống dock
+      path.push({ x: gatePos.x, y: gatePos.y }); // Từ cổng
+      path.push({ x: gatePos.x, y: roadY }); // Lên đường số 8
+      path.push({ x: finalPos.x, y: roadY }); // Đi dọc đường số 8
+      path.push({ x: finalPos.x, y: finalPos.y }); // Rẽ xuống dock
+    } else if (toDock.startsWith('D')) {
+      // Dock D1, D2, D3: Đi trên đường số 8, rồi rẽ trái vào dock
+      const turnPointX = dockPos.x + 30; // Điểm rẽ trước khi vào dock
+      
+      path.push({ x: gatePos.x, y: gatePos.y }); // Từ cổng
+      path.push({ x: gatePos.x, y: roadY }); // Lên đường số 8
+      path.push({ x: turnPointX, y: roadY }); // Đi dọc đường số 8
+      path.push({ x: turnPointX, y: finalPos.y }); // Rẽ trái
+      path.push({ x: finalPos.x, y: finalPos.y }); // Vào dock
+    }
+  }
+  
+  // Fallback: đường đi mặc định nếu không khớp case nào
+  else {
+    console.warn('Using fallback path for:', fromGate, '->', toDock);
+    const roadY = dockPos.area === 'A8' 
+      ? (positions.roads.DUONG_KINH_DO?.y || (dockPos.y + 50))
+      : (positions.roads.DUONG_TRANG_VANG?.y || (dockPos.y - 50));
     
     path.push({ x: gatePos.x, y: gatePos.y });
     path.push({ x: gatePos.x, y: roadY });
@@ -188,6 +250,7 @@ export const createPathToDock = (fromGate, toDock, positions, targetPosition = 1
     path.push({ x: finalPos.x, y: finalPos.y });
   }
 
+  console.log(`📍 Path created: ${fromGate} -> ${toDock}`, path);
   return path;
 };
 
@@ -208,16 +271,62 @@ export const createPathFromDock = (fromDock, toGate, positions, fromPosition = 1
   }
 
   const startPos = calculatePositionOffset(fromPosition, dockPos);
+  const roadType = getRoadForDock(fromDock);
 
-  if (dockPos.area === 'A8') {
-    const roadY = positions.roads.DUONG_KINH_DO?.y || (dockPos.y + 50);
+  // Dock B hoặc A -> CỔNG 1 hoặc CỔNG 2
+  if ((fromDock.startsWith('B') || fromDock.startsWith('A')) &&
+      (toGate === 'CONG_1' || toGate === 'CONG_2')) {
     
-    path.push({ x: startPos.x, y: startPos.y });
-    path.push({ x: startPos.x, y: roadY });
-    path.push({ x: gatePos.x, y: roadY });
-    path.push({ x: gatePos.x, y: gatePos.y });
-  } else if (dockPos.area === 'A10') {
-    const roadY = positions.roads.DUONG_TRANG_VANG?.y || (dockPos.y - 50);
+    const roadY = positions.roads.DUONG_KINH_DO?.y || (dockPos.y + 60);
+    
+    if (fromDock.startsWith('B')) {
+      // Từ dock B: Xuống đường số 8, rồi ra cổng
+      path.push({ x: startPos.x, y: startPos.y }); // Từ dock
+      path.push({ x: startPos.x, y: roadY }); // Xuống đường số 8
+      path.push({ x: gatePos.x, y: roadY }); // Đi dọc đường số 8
+      path.push({ x: gatePos.x, y: gatePos.y }); // Ra cổng
+    } else if (fromDock.startsWith('A')) {
+      // Từ dock A: Ra đường, lên đường số 8, rồi ra cổng
+      const turnPointX = dockPos.x - 30;
+      
+      path.push({ x: startPos.x, y: startPos.y }); // Từ dock
+      path.push({ x: turnPointX, y: startPos.y }); // Ra khỏi dock
+      path.push({ x: turnPointX, y: roadY }); // Lên đường số 8
+      path.push({ x: gatePos.x, y: roadY }); // Đi dọc đường số 8
+      path.push({ x: gatePos.x, y: gatePos.y }); // Ra cổng
+    }
+  }
+  
+  // Dock C hoặc D -> CỔNG 3
+  else if ((fromDock.startsWith('C') || fromDock.startsWith('D')) &&
+           toGate === 'CONG_3') {
+    
+    const roadY = positions.roads.DUONG_TRANG_VANG?.y || (dockPos.y - 60);
+    
+    if (fromDock.startsWith('C')) {
+      // Từ dock C: Lên đường số 8, rồi ra cổng
+      path.push({ x: startPos.x, y: startPos.y }); // Từ dock
+      path.push({ x: startPos.x, y: roadY }); // Lên đường số 8
+      path.push({ x: gatePos.x, y: roadY }); // Đi dọc đường số 8
+      path.push({ x: gatePos.x, y: gatePos.y }); // Ra cổng
+    } else if (fromDock.startsWith('D')) {
+      // Từ dock D: Ra đường, lên đường số 8, rồi ra cổng
+      const turnPointX = dockPos.x + 30;
+      
+      path.push({ x: startPos.x, y: startPos.y }); // Từ dock
+      path.push({ x: turnPointX, y: startPos.y }); // Ra khỏi dock
+      path.push({ x: turnPointX, y: roadY }); // Lên đường số 8
+      path.push({ x: gatePos.x, y: roadY }); // Đi dọc đường số 8
+      path.push({ x: gatePos.x, y: gatePos.y }); // Ra cổng
+    }
+  }
+  
+  // Fallback
+  else {
+    console.warn('Using fallback exit path for:', fromDock, '->', toGate);
+    const roadY = dockPos.area === 'A8'
+      ? (positions.roads.DUONG_KINH_DO?.y || (dockPos.y + 50))
+      : (positions.roads.DUONG_TRANG_VANG?.y || (dockPos.y - 50));
     
     path.push({ x: startPos.x, y: startPos.y });
     path.push({ x: startPos.x, y: roadY });
@@ -225,6 +334,7 @@ export const createPathFromDock = (fromDock, toGate, positions, fromPosition = 1
     path.push({ x: gatePos.x, y: gatePos.y });
   }
 
+  console.log(`📍 Exit path created: ${fromDock} -> ${toGate}`, path);
   return path;
 };
 

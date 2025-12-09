@@ -9,6 +9,10 @@
 @use './components/TruckAnimation.scss';
 @use './pages/DockDashboard.scss';
 @use './pages/DashboardDetail/DashboardDetail.scss';
+@use  './components/DashboardHeader.scss';
+@use './components/WaitingAreaTable.scss';
+
+
 * {
   margin: 0;
   padding: 0;

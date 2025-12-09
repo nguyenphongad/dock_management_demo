@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { 
   getVehiclesFromStorage, 
   categorizeVehiclesByTime,
@@ -7,92 +8,95 @@ import {
 
 const DockTable = ({ docks, kpis }) => {
   const [insideWarehouseVehicles, setInsideWarehouseVehicles] = useState([]);
+  const [waitingVehicles, setWaitingVehicles] = useState([]);
+  const [enteringVehicles, setEnteringVehicles] = useState([]);
+  const [isWaitingCollapsed, setIsWaitingCollapsed] = useState(false);
+
+  // Hàm kiểm tra dock có hợp lệ không
+  const isValidDock = (dockName) => {
+    if (!dockName) return false;
+    
+    const dockCode = extractDockCode(dockName);
+    if (!dockCode) return false;
+    
+    // Check A2, A3
+    if (dockCode === 'A2' || dockCode === 'A3') return true;
+    
+    // Check B1-B20
+    if (dockCode.startsWith('B')) {
+      const num = parseInt(dockCode.substring(1));
+      return num >= 1 && num <= 20;
+    }
+    
+    // Check C1-C8
+    if (dockCode.startsWith('C')) {
+      const num = parseInt(dockCode.substring(1));
+      return num >= 1 && num <= 8;
+    }
+    
+    // Check D1-D3
+    if (dockCode.startsWith('D')) {
+      const num = parseInt(dockCode.substring(1));
+      return num >= 1 && num <= 3;
+    }
+    
+    return false;
+  };
 
   useEffect(() => {
     const updateVehiclesList = () => {
       const storedVehicles = getVehiclesFromStorage();
       const categorized = categorizeVehiclesByTime(storedVehicles);
       
-      // Lấy tất cả xe đang ở trong kho (đã vào cổng nhưng chưa ra cổng)
+      // Xe đang trong kho - CHỈ LỌC CÁC DOCK HỢP LỆ
       const insideVehicles = [
         ...categorized.entering,
         ...categorized.loading
-      ].map(v => ({
+      ]
+        .filter(v => isValidDock(v.DockName)) // Thêm filter ở đây
+        .map(v => ({
+          ...v,
+          dockCode: extractDockCode(v.DockName),
+          statusText: categorized.entering.some(ev => ev.ID === v.ID) 
+            ? 'Đang vào' 
+            : 'Đang làm hàng'
+        }));
+      
+      // Xe đang chờ - KHÔNG LỌC, GIỮ NGUYÊN TẤT CẢ
+      const waitingWithDockCode = categorized.waiting.map(v => ({
         ...v,
-        dockCode: extractDockCode(v.DockName),
-        statusText: categorized.entering.some(ev => ev.ID === v.ID) 
-          ? 'Đang vào' 
-          : 'Đang làm hàng'
+        dockCode: extractDockCode(v.DockName)
+      }));
+      
+      const enteringWithDockCode = categorized.entering.map(v => ({
+        ...v,
+        dockCode: extractDockCode(v.DockName)
       }));
       
       setInsideWarehouseVehicles(insideVehicles);
-      
-      console.log('Inside warehouse vehicles:', insideVehicles.length);
+      setWaitingVehicles(waitingWithDockCode);
+      setEnteringVehicles(enteringWithDockCode);
+
+      console.log('📋 DockTable updated:', {
+        insideWarehouse: insideVehicles.length,
+        insideWarehouseFiltered: `(only valid docks: A2,A3,B1-B20,C1-C8,D1-D3)`,
+        waiting: waitingWithDockCode.length,
+        waitingNote: '(all docks, no filter)',
+        entering: enteringWithDockCode.length
+      });
     };
     
-    // Initial load
     updateVehiclesList();
-    
-    // Update mỗi 5 giây
     const interval = setInterval(updateVehiclesList, 5000);
     
     return () => clearInterval(interval);
   }, []);
 
-  const miniKpis = [
-    { 
-      title: 'Currently Loading', 
-      value: kpis?.currentlyLoading || 0,
-      icon: '🚛',
-      color: '#3498db'
-    },
-    { 
-      title: 'Waiting', 
-      value: kpis?.waiting || 0,
-      icon: '⏳',
-      color: '#f39c12'
-    },
-    { 
-      title: 'Completed Today', 
-      value: kpis?.completedToday || 0,
-      icon: '✅',
-      color: '#27ae60'
-    },
-    { 
-      title: 'Avg Turnaround Time', 
-      value: `${kpis?.avgTurnaroundTime || 0}p`,
-      icon: '⏱️',
-      color: '#9b59b6'
-    },
-    { 
-      title: 'Avg Loading Time', 
-      value: `${kpis?.avgLoadingTime || 0}p`,
-      icon: '📦',
-      color: '#e67e22'
-    },
-    { 
-      title: 'Avg Wait Time', 
-      value: `${kpis?.avgWaitTime || 0}p`,
-      icon: '⌛',
-      color: '#e74c3c'
-    }
-  ];
+  const allWaitingVehicles = [...waitingVehicles, ...enteringVehicles];
 
   return (
     <div className="dock-table">
       <h3 className="dock-table__title">Bảng Giám Sát Dock</h3>
-      
-      <div className="dock-table__kpis">
-        {miniKpis.map((kpi, index) => (
-          <div key={index} className="mini-kpi-card" style={{ borderLeftColor: kpi.color }}>
-            <div className="mini-kpi-card__icon">{kpi.icon}</div>
-            <div className="mini-kpi-card__content">
-              <div className="mini-kpi-card__value">{kpi.value}</div>
-              <div className="mini-kpi-card__title">{kpi.title}</div>
-            </div>
-          </div>
-        ))}
-      </div>
 
       {/* Bảng xe đang trong kho */}
       <div className="dock-table__vehicles-section">
@@ -149,43 +153,78 @@ const DockTable = ({ docks, kpis }) => {
         </div>
       </div>
 
-      {/* Bảng tổng quan docks
-      <div className="dock-table__content">
-        <h4 className="dock-overview__title">📊 Tổng quan Docks</h4>
-        <table>
-          <thead>
-            <tr>
-              <th>Dock</th>
-              <th>Status</th>
-              <th>Vehicle</th>
-              <th>Utilization</th>
-              <th>Daily</th>
-            </tr>
-          </thead>
-          <tbody>
-            {docks?.map((dock, idx) => (
-              <tr key={idx}>
-                <td>
-                  <span className={`status-dot status-dot--${dock.status}`}></span>
-                  {dock.name}
-                </td>
-                <td>
-                  <span className={`badge badge--${dock.status}`}>
-                    {dock.status === 'loading' ? 'Loading' : 'Empty'}
-                  </span>
-                </td>
-                <td className="vehicle-cell">{dock.currentVehicle || '-'}</td>
-                <td>
-                  <span className={`badge badge--${dock.utilization}`}>
-                    {dock.utilizationText || '-'}
-                  </span>
-                </td>
-                <td className="performance-cell">{dock.dailyPerformance || 0}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div> */}
+      {/* Bảng xe chờ & đang vào - Tích hợp WaitingAreaTable */}
+      <div className="dock-table__vehicles-section">
+        <div className="vehicles-section__header">
+          <h4 className="vehicles-section__title">
+            🚗 Bãi chờ & Đang vào ({allWaitingVehicles.length})
+          </h4>
+          <div className="vehicles-section__stats">
+            Chờ: {waitingVehicles.length} | Đang vào: {enteringVehicles.length}
+          </div>
+          <button 
+            className="vehicles-section__toggle"
+            onClick={() => setIsWaitingCollapsed(!isWaitingCollapsed)}
+            title={isWaitingCollapsed ? "Mở rộng" : "Thu gọn"}
+          >
+            {isWaitingCollapsed ? <FiChevronDown size={18} /> : <FiChevronUp size={18} />}
+          </button>
+        </div>
+        
+        <div className={`vehicles-section__content ${isWaitingCollapsed ? 'vehicles-section__content--collapsed' : ''}`}>
+          {allWaitingVehicles.length === 0 ? (
+            <div className="no-vehicles">Không có xe đang chờ</div>
+          ) : (
+            <table className="vehicles-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Biển số</th>
+                  <th>Dock dự kiến</th>
+                  <th>Tài xế</th>
+                  <th>Trạng thái</th>
+                  <th>Vào cổng</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allWaitingVehicles.map((vehicle) => {
+                  const isEntering = enteringVehicles.some(v => v.ID === vehicle.ID);
+                  return (
+                    <tr key={vehicle.ID} className={isEntering ? 'row-entering' : ''}>
+                      <td className="cell-id">{vehicle.ID}</td>
+                      <td className="cell-regno">
+                        <strong>{vehicle.RegNo}</strong>
+                      </td>
+                      <td className="cell-dock">
+                        <span className="dock-badge">
+                          {vehicle.dockCode || vehicle.DockName || '-'}
+                        </span>
+                      </td>
+                      <td className="cell-driver">{vehicle.DriverName || 'Chưa cập nhật'}</td>
+                      <td className="cell-status">
+                        <span className={`status-badge ${isEntering ? 'status-badge--entering' : 'status-badge--waiting'}`}>
+                          {isEntering ? '🚗 Đang vào' : vehicle.DockRegisterStatus || 'Đang chờ'}
+                        </span>
+                      </td>
+                      <td className="cell-time">
+                        {vehicle.GateIn 
+                          ? new Date(vehicle.GateIn).toLocaleString('vi-VN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              day: '2-digit',
+                              month: '2-digit'
+                            })
+                          : '-'
+                        }
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
     </div>
   );
 };
