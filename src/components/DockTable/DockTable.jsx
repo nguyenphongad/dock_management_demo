@@ -12,24 +12,57 @@ const DockTable = ({ docks, kpis }) => {
   const [enteringVehicles, setEnteringVehicles] = useState([]);
   const [isWaitingCollapsed, setIsWaitingCollapsed] = useState(false);
 
+  // Hàm kiểm tra dock có hợp lệ không
+  const isValidDock = (dockName) => {
+    if (!dockName) return false;
+    
+    const dockCode = extractDockCode(dockName);
+    if (!dockCode) return false;
+    
+    // Check A2, A3
+    if (dockCode === 'A2' || dockCode === 'A3') return true;
+    
+    // Check B1-B20
+    if (dockCode.startsWith('B')) {
+      const num = parseInt(dockCode.substring(1));
+      return num >= 1 && num <= 20;
+    }
+    
+    // Check C1-C8
+    if (dockCode.startsWith('C')) {
+      const num = parseInt(dockCode.substring(1));
+      return num >= 1 && num <= 8;
+    }
+    
+    // Check D1-D3
+    if (dockCode.startsWith('D')) {
+      const num = parseInt(dockCode.substring(1));
+      return num >= 1 && num <= 3;
+    }
+    
+    return false;
+  };
+
   useEffect(() => {
     const updateVehiclesList = () => {
       const storedVehicles = getVehiclesFromStorage();
       const categorized = categorizeVehiclesByTime(storedVehicles);
       
-      // Xe đang trong kho
+      // Xe đang trong kho - CHỈ LỌC CÁC DOCK HỢP LỆ
       const insideVehicles = [
         ...categorized.entering,
         ...categorized.loading
-      ].map(v => ({
-        ...v,
-        dockCode: extractDockCode(v.DockName),
-        statusText: categorized.entering.some(ev => ev.ID === v.ID) 
-          ? 'Đang vào' 
-          : 'Đang làm hàng'
-      }));
+      ]
+        .filter(v => isValidDock(v.DockName)) // Thêm filter ở đây
+        .map(v => ({
+          ...v,
+          dockCode: extractDockCode(v.DockName),
+          statusText: categorized.entering.some(ev => ev.ID === v.ID) 
+            ? 'Đang vào' 
+            : 'Đang làm hàng'
+        }));
       
-      // Xe đang chờ
+      // Xe đang chờ - KHÔNG LỌC, GIỮ NGUYÊN TẤT CẢ
       const waitingWithDockCode = categorized.waiting.map(v => ({
         ...v,
         dockCode: extractDockCode(v.DockName)
@@ -43,6 +76,14 @@ const DockTable = ({ docks, kpis }) => {
       setInsideWarehouseVehicles(insideVehicles);
       setWaitingVehicles(waitingWithDockCode);
       setEnteringVehicles(enteringWithDockCode);
+
+      console.log('📋 DockTable updated:', {
+        insideWarehouse: insideVehicles.length,
+        insideWarehouseFiltered: `(only valid docks: A2,A3,B1-B20,C1-C8,D1-D3)`,
+        waiting: waitingWithDockCode.length,
+        waitingNote: '(all docks, no filter)',
+        entering: enteringWithDockCode.length
+      });
     };
     
     updateVehiclesList();

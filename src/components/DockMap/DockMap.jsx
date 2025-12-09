@@ -263,24 +263,7 @@ const DockMap = ({ vehicles = [], warehouse, kpis }) => {
       icon: '✅',
       color: '#27ae60'
     },
-    {
-      title: 'Avg Turnaround',
-      value: `${realTimeKpis.avgTurnaroundTime}p`,
-      icon: '⏱️',
-      color: '#9b59b6'
-    },
-    {
-      title: 'Avg Loading',
-      value: `${realTimeKpis.avgLoadingTime}p`,
-      icon: '📦',
-      color: '#e67e22'
-    },
-    {
-      title: 'Avg Wait',
-      value: `${realTimeKpis.avgWaitTime}p`,
-      icon: '⌛',
-      color: '#e74c3c'
-    }
+    
   ];
 
   return (
