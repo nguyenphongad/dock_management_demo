@@ -12,10 +12,20 @@ import TruckAnimation from '../TruckAnimation/TruckAnimation';
 import DockItem from '../DockItem/DockItem';
 import DockingTruck from '../DockingTruck/DockingTruck';
 
-const DockMap = ({ vehicles = [], warehouse }) => {
+import img_logo_white_mdl from '../../assets/logo_modelez.png';
+
+const DockMap = ({ vehicles = [], warehouse, kpis }) => {
   const [activeAnimations, setActiveAnimations] = useState([]);
   const [activeDocks, setActiveDocks] = useState(new Set());
   const [dockingTrucks, setDockingTrucks] = useState(new Map());
+  const [realTimeKpis, setRealTimeKpis] = useState({
+    currentlyLoading: 0,
+    waiting: 0,
+    completedToday: 0,
+    avgTurnaroundTime: 0,
+    avgLoadingTime: 0,
+    avgWaitTime: 0
+  });
   const processedVehicleIds = useRef(new Set());
 
   useEffect(() => {
@@ -114,6 +124,93 @@ const DockMap = ({ vehicles = [], warehouse }) => {
     };
   }, []);
 
+  // Thêm useEffect để tính toán KPIs realtime
+  useEffect(() => {
+    const calculateKPIs = () => {
+      const storedVehicles = getVehiclesFromStorage();
+      if (storedVehicles.length === 0) return;
+
+      const categorized = categorizeVehiclesByTime(storedVehicles);
+      
+      // 1. Currently Loading
+      const currentlyLoading = categorized.loading.length;
+      
+      // 2. Waiting
+      const waiting = categorized.waiting.length;
+      
+      // 3. Completed Today
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const completedToday = categorized.completed.filter(v => {
+        if (!v.GateOut) return false;
+        const gateOutDate = new Date(v.GateOut);
+        return gateOutDate >= today;
+      }).length;
+      
+      // 4. Average Turnaround Time (từ GateIn đến GateOut)
+      const completedWithTimes = categorized.completed.filter(v => v.GateIn && v.GateOut);
+      let avgTurnaroundTime = 0;
+      if (completedWithTimes.length > 0) {
+        const totalTurnaround = completedWithTimes.reduce((sum, v) => {
+          const gateIn = new Date(v.GateIn);
+          const gateOut = new Date(v.GateOut);
+          return sum + (gateOut - gateIn);
+        }, 0);
+        avgTurnaroundTime = Math.round((totalTurnaround / completedWithTimes.length) / 60000); // Convert to minutes
+      }
+      
+      // 5. Average Loading Time (từ DockIn đến DockOut)
+      const loadedWithTimes = categorized.completed.filter(v => v.DockIn && v.DockOut);
+      let avgLoadingTime = 0;
+      if (loadedWithTimes.length > 0) {
+        const totalLoading = loadedWithTimes.reduce((sum, v) => {
+          const dockIn = new Date(v.DockIn);
+          const dockOut = new Date(v.DockOut);
+          return sum + (dockOut - dockIn);
+        }, 0);
+        avgLoadingTime = Math.round((totalLoading / loadedWithTimes.length) / 60000); // Convert to minutes
+      }
+      
+      // 6. Average Wait Time (từ GateIn đến DockIn)
+      const waitedWithTimes = [...categorized.loading, ...categorized.completed].filter(v => v.GateIn && v.DockIn);
+      let avgWaitTime = 0;
+      if (waitedWithTimes.length > 0) {
+        const totalWait = waitedWithTimes.reduce((sum, v) => {
+          const gateIn = new Date(v.GateIn);
+          const dockIn = new Date(v.DockIn);
+          return sum + (dockIn - gateIn);
+        }, 0);
+        avgWaitTime = Math.round((totalWait / waitedWithTimes.length) / 60000); // Convert to minutes
+      }
+      
+      setRealTimeKpis({
+        currentlyLoading,
+        waiting,
+        completedToday,
+        avgTurnaroundTime,
+        avgLoadingTime,
+        avgWaitTime
+      });
+
+      console.log('📊 KPIs updated:', {
+        currentlyLoading,
+        waiting,
+        completedToday,
+        avgTurnaroundTime: `${avgTurnaroundTime}p`,
+        avgLoadingTime: `${avgLoadingTime}p`,
+        avgWaitTime: `${avgWaitTime}p`
+      });
+    };
+
+    // Initial calculation
+    calculateKPIs();
+    
+    // Update every 5 seconds
+    const interval = setInterval(calculateKPIs, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
   const handleAnimationComplete = (animationId) => {
     console.log('Animation completed:', animationId);
 
@@ -147,13 +244,64 @@ const DockMap = ({ vehicles = [], warehouse }) => {
     return vehicles?.filter(v => v.dockName?.includes(dockCode) && v.status === 'loading') || [];
   };
 
+  const miniKpis = [
+    {
+      title: 'Currently Loading',
+      value: realTimeKpis.currentlyLoading,
+      icon: '🚛',
+      color: '#3498db'
+    },
+    {
+      title: 'Waiting',
+      value: realTimeKpis.waiting,
+      icon: '⏳',
+      color: '#f39c12'
+    },
+    {
+      title: 'Completed Today',
+      value: realTimeKpis.completedToday,
+      icon: '✅',
+      color: '#27ae60'
+    },
+    {
+      title: 'Avg Turnaround',
+      value: `${realTimeKpis.avgTurnaroundTime}p`,
+      icon: '⏱️',
+      color: '#9b59b6'
+    },
+    {
+      title: 'Avg Loading',
+      value: `${realTimeKpis.avgLoadingTime}p`,
+      icon: '📦',
+      color: '#e67e22'
+    },
+    {
+      title: 'Avg Wait',
+      value: `${realTimeKpis.avgWaitTime}p`,
+      icon: '⌛',
+      color: '#e74c3c'
+    }
+  ];
+
   return (
     <div className="dock-map">
       <div className="dock-map__header">
         <div className="header-left">
           <h3 className="dock-map__title">Sơ đồ Dock - {warehouse}</h3>
         </div>
-        <div className="header-center"></div>
+        <div className="header-center">
+          <div className="dock-map__kpis">
+            {miniKpis.map((kpi, index) => (
+              <div key={index} className="mini-kpi-card" style={{ borderLeftColor: kpi.color }}>
+                <div className="mini-kpi-card__icon">{kpi.icon}</div>
+                <div className="mini-kpi-card__content">
+                  <div className="mini-kpi-card__value">{kpi.value}</div>
+                  <div className="mini-kpi-card__title">{kpi.title}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
         <div className="header-right">
           <div className="dock-map__legend">
             <div className="legend-item">
@@ -203,16 +351,19 @@ const DockMap = ({ vehicles = [], warehouse }) => {
 
 
         <div className="ABC">
-          <div className="duong-lu duong-lu--full" style={{ left: '44px' }}>ĐƯỜNG LƯ</div>
+          <div className="duong-lu duong-lu--full set_rad_left"  >
+            <span>ĐƯỜNG SOLITE</span>
+          </div>
           <div className="map">
             <div className="dock-area dock-area--a10">
               <div className="gate-exit gate-exit--top" style={{ right: '-74px', }}>
                 <MdExitToApp size={18} />
                 <span>CỔNG 3</span>
               </div>
-              <div className="area-label">
+              {/* <div className="area-label">
                 <span className="area-name">Đường Số 10 - VSIP 1</span>
-              </div>
+              </div> */}
+              <div className="duong-trang-vang">ĐƯỜNG SỐ 10  - VSIP 1</div>
               <div className="a10-layout">
                 <div className="a10-main">
                   {/* <div className="duong-lu">ĐƯỜNG LƯ</div> */}
@@ -240,7 +391,7 @@ const DockMap = ({ vehicles = [], warehouse }) => {
                   ))}
                 </div>
               </div>
-              <div className="duong-trang-vang">ĐƯỜNG TRẮNG VÀNG</div>
+              {/* <div className="duong-trang-vang">ĐƯỜNG TRẮNG VÀNG</div> */}
             </div>
 
             <div className="area-separator">
@@ -251,12 +402,17 @@ const DockMap = ({ vehicles = [], warehouse }) => {
               {/* <div className="duong-lu">ĐƯỜNG LƯ</div> */}
               <div className="factory-area__background"></div>
               <div className="factory-area__content">
-                <div className="factory-area__icon">
+                {/* <div className="factory-area__icon">
                   <MdFactory />
-                </div>
-                <div className="factory-area__label">Factory Area</div>
-                <div className="factory-area__sublabel">Khu vực sản xuất</div>
+                </div> */}
+                {/* <div className="factory-area__label">Factory Area</div>
+                <div className="factory-area__sublabel">Khu vực sản xuất</div> */}
+                <img src={img_logo_white_mdl} alt='logo_modelez_white' className='image_logo' />
               </div>
+            </div>
+
+            <div className="area-separator">
+              <div className="separator-road"></div>
             </div>
 
             <div className="dock-area dock-area--a8">
@@ -264,11 +420,11 @@ const DockMap = ({ vehicles = [], warehouse }) => {
                 <MdExitToApp size={18} />
                 <span>CỔNG 1</span>
               </div>
-              <div className="area-label">
+              {/* <div className="area-label">
                 <span className="area-name">Đường Số 8 - VSIP 1</span>
-              </div>
+              </div> */}
               <div className="a8-layout">
-                <div className="duong-trung-thu">ĐƯỜNG TRUNG THƯ</div>
+                {/* <div className="duong-trung-thu">ĐƯỜNG TRUNG THƯ (mờ)</div> */}
                 <div className="a8-content-wrapper">
                   <div className="a8-docks">
                     {a8MainDocks.map(dock => (
@@ -297,7 +453,8 @@ const DockMap = ({ vehicles = [], warehouse }) => {
                     ))}
                   </div>
                 </div>
-                <div className="duong-kinh-do">ĐƯỜNG KINH ĐÔ</div>
+                {/* <div className="duong-kinh-do">ĐƯỜNG KINH ĐÔ</div> */}
+                <div className="duong-kinh-do">ĐƯỜNG SỐ 8  - VSIP 1</div>
               </div>
               <div className="gate-exit gate-exit--right" style={{ right: '-74px', }}>
                 <MdExitToApp size={18} />
@@ -305,7 +462,9 @@ const DockMap = ({ vehicles = [], warehouse }) => {
               </div>
             </div>
           </div>
-          <div className="duong-lu duong-lu--full" style={{ right: '44px', top:'49px', bottom: '341px' }}>ĐƯỜNG LƯ</div>
+          <div className="duong-lu duong-lu--full set_rad_right " >
+            <span>ĐƯỜNG SOLITE</span>
+          </div>
         </div>
       </div>
     </div>

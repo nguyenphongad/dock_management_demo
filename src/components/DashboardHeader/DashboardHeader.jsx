@@ -8,7 +8,7 @@ import MenuDropdown from '../MenuDropdown/MenuDropdown';
 import ApiModeSelector from '../ApiModeSelector';
 import AccountMenu from '../AccountMenu/AccountMenu';
 import ProfileModal from '../ProfileModal/ProfileModal';
-import './DashboardHeader.scss';
+import logo_smartlog from '../../assets/Logo-smartlog.png';
 
 const DashboardHeader = ({ 
   title = 'Dock Management',
@@ -71,11 +71,7 @@ const DashboardHeader = ({
         <div className="header-left">
           <MenuDropdown />
           <div className="logo-container">
-            {icon}
-          </div>
-          <div className="header-title">
-            <h1>{title}</h1>
-            <span className="subtitle">{subtitle}</span>
+            <img src={logo_smartlog} className="logo-image" alt="Logo Smartlog" />
           </div>
         </div>
 

@@ -1,8 +1,8 @@
 import React from 'react';
 import { FiTruck } from 'react-icons/fi';
 
-const DockItem = ({ 
-  dockCode, 
+const DockItem = ({
+  dockCode,
   vehicles = [],
   isCompact = false,
   orientation = 'vertical',
@@ -67,18 +67,18 @@ const DockItem = ({
   if (labelPosition === 'left' || labelPosition === 'right') {
     return (
       <div className={`dock-item-wrapper dock-item-wrapper--horizontal`}>
-        {labelPosition === 'left' && (
-          <div className="dock-item__label-outside dock-item__label-outside--left">
-            {dockCode}
-          </div>
-        )}
-        
-        <div 
+
+
+        <div
           className={`dock-item dock-item--horizontal dock-item--${isCompact ? 'compact' : 'normal'} ${hasVehicle ? 'dock-item--occupied' : 'dock-item--empty'}`}
         >
           {renderDockContent()}
         </div>
-
+        {labelPosition === 'left' && (
+          <div className="dock-item__label-outside dock-item__label-outside--right">
+            {dockCode}
+          </div>
+        )}
         {labelPosition === 'right' && (
           <div className="dock-item__label-outside dock-item__label-outside--right">
             {dockCode}
@@ -90,7 +90,7 @@ const DockItem = ({
 
   // Default vertical
   return (
-    <div 
+    <div
       className={`dock-item dock-item--vertical dock-item--${isCompact ? 'compact' : 'normal'} ${hasVehicle ? 'dock-item--occupied' : 'dock-item--empty'}`}
     >
       {renderDockContent()}

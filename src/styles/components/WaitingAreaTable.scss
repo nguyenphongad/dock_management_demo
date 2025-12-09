@@ -1,0 +1,185 @@
+.waiting-area-table {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease-in-out;
+  overflow: hidden;
+  margin-bottom: 20px;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: 3px solid rgba(255, 255, 255, 0.2);
+
+    svg {
+      flex-shrink: 0;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+  }
+
+  &__toggle {
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    color: white;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.25);
+      transform: scale(1.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+
+  &__content {
+    max-height: 1000px;
+    opacity: 1;
+    transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    overflow: hidden;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+
+      thead {
+        background: #f8f9fa;
+
+        tr {
+          border-bottom: 2px solid #e9ecef;
+        }
+
+        th {
+          padding: 14px 16px;
+          text-align: left;
+          font-weight: 600;
+          color: #495057;
+          font-size: 13px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          white-space: nowrap;
+        }
+      }
+
+      tbody {
+        tr {
+          border-bottom: 1px solid #f0f0f0;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background-color: #f8f9ff !important;
+            transform: translateX(2px);
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.1);
+          }
+
+          &:last-child {
+            border-bottom: none;
+          }
+        }
+
+        td {
+          padding: 14px 16px;
+          color: #333;
+
+          &.no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-style: italic;
+          }
+
+          &.cell-id {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 13px;
+          }
+
+          &.cell-regno {
+            strong {
+              color: #2d3748;
+              font-size: 15px;
+            }
+          }
+
+          &.cell-dock {
+            font-weight: 500;
+          }
+
+          &.cell-driver {
+            color: #555;
+          }
+
+          &.cell-status {
+            .status-badge {
+              display: inline-block;
+              padding: 6px 12px;
+              border-radius: 20px;
+              font-size: 12px;
+              font-weight: 600;
+              letter-spacing: 0.3px;
+
+              &--waiting {
+                background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+                color: #d63031;
+                box-shadow: 0 2px 4px rgba(253, 203, 110, 0.3);
+              }
+
+              &--entering {
+                background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+                color: white;
+                box-shadow: 0 2px 4px rgba(9, 132, 227, 0.3);
+                animation: pulse 2s infinite;
+              }
+            }
+          }
+
+          &.cell-time {
+            color: #666;
+            font-size: 13px;
+            white-space: nowrap;
+          }
+        }
+      }
+    }
+  }
+
+  &--collapsed {
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+
+    .waiting-area-table__content {
+      max-height: 0;
+      opacity: 0;
+    }
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 2px 4px rgba(9, 132, 227, 0.3);
+  }
+  50% {
+    box-shadow: 0 2px 8px rgba(9, 132, 227, 0.5);
+  }
+}

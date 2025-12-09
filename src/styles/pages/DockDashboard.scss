@@ -50,7 +50,7 @@
 
     .map-and-table-container {
       flex: 1;
-      display: grid;
+      display: flex;
       grid-template-columns: 1fr 350px;
       gap: 0;
       overflow: hidden;

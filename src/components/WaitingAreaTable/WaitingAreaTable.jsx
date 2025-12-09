@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { FiTruck } from 'react-icons/fi';
+import { FiTruck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
 import { 
   getVehiclesFromStorage, 
   categorizeVehiclesByTime,
   extractDockCode 
 } from '../../utils/vehicleStorageManager';
-import './WaitingAreaTable.scss';
 
 const WaitingAreaTable = () => {
   const [waitingVehicles, setWaitingVehicles] = useState([]);
   const [enteringVehicles, setEnteringVehicles] = useState([]);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     const updateWaitingList = () => {
@@ -48,13 +48,20 @@ const WaitingAreaTable = () => {
   const allVehicles = [...waitingVehicles, ...enteringVehicles];
 
   return (
-    <div className="waiting-area-table">
+    <div className={`waiting-area-table ${isCollapsed ? 'waiting-area-table--collapsed' : ''}`}>
       <div className="waiting-area-table__header">
         <FiTruck size={18} />
         <h3>Bãi chờ & Đang vào ({allVehicles.length})</h3>
         <div style={{ fontSize: '12px', marginLeft: '10px', color: '#999' }}>
           Chờ: {waitingVehicles.length} | Đang vào: {enteringVehicles.length}
         </div>
+        <button 
+          className="waiting-area-table__toggle"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          title={isCollapsed ? "Mở rộng" : "Thu gọn"}
+        >
+          {isCollapsed ? <FiChevronDown size={20} /> : <FiChevronUp size={20} />}
+        </button>
       </div>
 
       <div className="waiting-area-table__content">
