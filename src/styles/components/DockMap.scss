@@ -1,8 +1,8 @@
 .dock-map {
-  background: white;
+  background: #45566d;
   padding: 0;
   margin: 0;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
   height: 100%;
   overflow: hidden;
   display: flex;
@@ -10,8 +10,8 @@
 
   &__header {
     padding: 0.75rem 1rem;
-    background: #f8f9fa;
-    border-bottom: 2px solid #e9ecef;
+    background: #2c3e50;
+    border-bottom: 2px solid #556b7f;
     flex-shrink: 0;
     display: flex;
     justify-content: space-between;
@@ -35,7 +35,7 @@
 
   &__title {
     margin: 0;
-    color: #2c3e50;
+    color: #ecf0f1;
     font-size: 0.95rem;
     font-weight: 600;
   }
@@ -44,11 +44,15 @@
     display: flex;
     gap: 1rem;
     font-size: 0.75rem;
+    background: rgba(44, 62, 80, 0.9);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
 
     .legend-item {
       display: flex;
       align-items: center;
       gap: 0.4rem;
+      color: #ecf0f1;
     }
 
     .legend-dot {
@@ -82,12 +86,87 @@
     min-height: 0;
     position: relative;
   }
+ .duong-lu--full {
+    /* VỊ TRÍ */
+    position: absolute;
+    z-index: 10; /* Đảm bảo nó nằm trên các khu vực nền */
+    
+    // /* LEFT: Xác định vị trí ngang. 
+    //    Cần căn chỉnh chính xác để nằm thẳng hàng với vị trí cũ. */
+    // left: 44px; /* <--- GIÁ TRỊ CẦN THỬ NGHIỆM */
+    
+    /* TOP: Xác định điểm bắt đầu. 
+       Cần đặt ở điểm bắt đầu của a10-layout, không phải đầu .dock-map__content. */
+    top: 106px; /* <--- GIÁ TRỊ CẦN THỬ NGHIỆM */
+    
+    /* KÍCH THƯỚC */
+    width: 40px; /* Độ dày của đường lư */
+    
+    /* BOTTOM: Xác định điểm kết thúc ngay TRÊN CỔNG 1. */
+    /* Nếu Cổng 1 có height 50px và nằm sát đáy .dock-area--a8, 
+       giá trị này sẽ phải lớn. (Ví dụ: 50px là khoảng cách từ đáy CỔNG 1) */
+    bottom: 318px; /* <--- GIÁ TRỊ CẦN THỬ NGHIỆM */
+
+    /* STYLE NỘI DUNG */
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    display: flex;
+    justify-content: center;
+   
+    /* 1. CĂN CHỮ CHÍNH GIỮA CHIỀU DÀY */
+    align-items: center; /* <-- Đã thay đổi: Căn chữ giữa trục ngang (chiều dày) */
+
+    /* --- STYLE CHỮ --- */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    font-size: 0.7rem; 
+    font-weight: 700;
+    /* 2. MÀU CHỮ TRẮNG */
+    color: white; /* <-- Đã thay đổi: Màu chữ trắng */
+
+    /* Các style màu sắc khác */
+    background: #2c3e50;
+    border-left: 3px solid #f39c12;
+    border-right: 3px solid #f39c12;
+
+    /* Loại bỏ border/padding ở đáy để nó không đè lên Cổng 1 */
+    padding-bottom: 0; 
+    border-bottom: none;
 }
+.duong-lu--full::after {
+    content: '';
+    position: absolute;
+    /* Đặt vạch đứt ở trung tâm (trục X) của đường lư */
+    left: 50%;
+    transform: translateX(-50%);
+    top: 100px; /* <-- Tăng lên, để bắt đầu sau chữ "ĐƯỜNG LƯ" đầu tiên */
+    bottom: 100px; /* <-- Tăng lên, để dừng lại trước khi chữ lặp lại (nếu có) */
+    
+    width: 2px; /* Độ dày của vạch đứt */
+    
+    /* Kéo dài vạch từ trên xuống dưới (trục Y) */
+    top: 10px; /* Bắt đầu sau chữ "ĐƯỜNG LƯ" */
+    bottom: 10px; /* Dừng lại trước mép cuối */
+    width: 2px; /* Độ dày của vạch đứt */
+    
+    /* TẠO HIỆU ỨNG NÉT ĐỨT (repeating-linear-gradient) */
+    background-image: repeating-linear-gradient(
+        to bottom, /* Vạch đứt theo chiều dọc */
+        #f39c12, /* Màu vạch (Vàng cam) */
+        #f39c12 10px, /* Chiều dài vạch */
+        transparent 10px, /* Khoảng trống */
+        transparent 20px /* Khoảng trống */
+    );
+    /* Giả sử bạn muốn các nét đứt chỉ là màu vàng, không phải nền */
+    z-index: 11; 
+}
+}
+
 
 .dock-area {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  // gap: 0.5rem;
   flex-shrink: 0;
 
   .area-label {
@@ -189,7 +268,7 @@
     grid-template-columns: auto repeat(8, 1fr);
     gap: 0.4rem;
     align-items: center;
-    background: #f8f9fa;
+    background: #556b7f;
     padding: 0.5rem;
     border-radius: 4px;
 
@@ -197,15 +276,46 @@
       writing-mode: vertical-rl;
       text-orientation: mixed;
       font-size: 0.65rem;
-      font-weight: 600;
-      color: #7f8c8d;
-      padding: 0 0.3rem;
-      background: #ffeaa7;
-      border-radius: 3px;
+      font-weight: 700;
+      color: #f39c12;
+      padding: 0.5rem 0.8rem;
+      background: #2c3e50;
+      border-left: 3px solid #f39c12;
+      border-right: 3px solid #f39c12;
+      border-radius: 2px;
       height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
+      
+      &::before,
+      &::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        width: 3px;
+        background: repeating-linear-gradient(
+          to bottom,
+          #f39c12 0px,
+          #f39c12 15px,
+          transparent 15px,
+          transparent 25px
+        );
+        transform: translateX(-50%);
+      }
+      
+      &::before {
+        top: 0;
+        height: calc(50% - 3rem);
+      }
+      
+      &::after {
+        bottom: 0;
+        height: calc(50% - 3rem);
+      }
     }
 
     .dock-slot:first-of-type {
@@ -218,19 +328,49 @@
     flex-direction: column;
     gap: 0.4rem;
     padding: 0.5rem;
-    background: #f8f9fa;
+    background: #556b7f;
     border-radius: 4px;
     min-width: auto;
   }
 
   .duong-trang-vang {
     text-align: center;
-    padding: 0.3rem;
-    background: #ffeaa7;
-    border-radius: 3px;
+    padding: 0.8rem 0.4rem;
+    background: #2c3e50;
+    border-top: 3px solid #f39c12;
+    border-bottom: 3px solid #f39c12;
+    border-radius: 2px;
     font-size: 0.7rem;
-    font-weight: 600;
-    color: #2c3e50;
+    font-weight: 700;
+    color: #f39c12;
+    text-transform: uppercase;
+    position: relative;
+    
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      height: 3px;
+      background: repeating-linear-gradient(
+        to right,
+        #f39c12 0px,
+        #f39c12 15px,
+        transparent 15px,
+        transparent 25px
+      );
+      transform: translateY(-50%);
+    }
+    
+    &::before {
+      left: 0;
+      width: calc(50% - 5rem);
+    }
+    
+    &::after {
+      right: 0;
+      width: calc(50% - 5rem);
+    }
   }
 }
 
@@ -243,6 +383,56 @@
   margin: 1rem 0;
   position: relative;
   min-height: 100px;
+
+  .duong-lu {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #f39c12;
+    padding: 0.5rem 0.8rem;
+    background: #2c3e50;
+    border-left: 3px solid #f39c12;
+    border-right: 3px solid #f39c12;
+    border-radius: 2px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 2;
+    
+    &::before,
+    &::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      width: 3px;
+      background: repeating-linear-gradient(
+        to bottom,
+        #f39c12 0px,
+        #f39c12 15px,
+        transparent 15px,
+        transparent 25px
+      );
+      transform: translateX(-50%);
+    }
+    
+    &::before {
+      top: 0;
+      height: calc(50% - 3rem);
+    }
+    
+    &::after {
+      bottom: 0;
+      height: calc(50% - 3rem);
+    }
+  }
 
   &__background {
     position: absolute;
@@ -298,20 +488,51 @@
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
-    background: #f8f9fa;
+    background: #556b7f;
     border-radius: 4px;
     position: relative;
-    padding: 0.75rem;
+    // padding: 0.75rem;
 
     .duong-trung-thu,
     .duong-kinh-do {
       text-align: center;
-      padding: 0.25rem;
-      background: #ffeaa7;
-      border-radius: 3px;
-      font-size: 0.65rem;
-      font-weight: 600;
-      color: #2c3e50;
+      padding: 0.8rem 0.4rem;
+      background: #2c3e50;
+      border-top: 3px solid #f39c12;
+      border-bottom: 3px solid #f39c12;
+      border-radius: 2px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #f39c12;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      position: relative;
+      
+      &::before,
+      &::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        height: 3px;
+        background: repeating-linear-gradient(
+          to right,
+          #f39c12 0px,
+          #f39c12 15px,
+          transparent 15px,
+          transparent 25px
+        );
+        transform: translateY(-50%);
+      }
+      
+      &::before {
+        left: 0;
+        width: calc(50% - 6rem);
+      }
+      
+      &::after {
+        right: 0;
+        width: calc(50% - 6rem);
+      }
     }
 
     .a8-content-wrapper {
@@ -720,4 +941,10 @@
       min-width: 25px;
     }
   }
+  
+}
+
+.map{
+  margin-left: 74px;
+  margin-right: 74px;
 }
