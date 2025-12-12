@@ -103,33 +103,6 @@ export const cleanupCompletedVehicles = () => {
 };
 
 /**
- * Xác định cổng dựa trên DockName
- */
-export const determineGateFromDock = (dockName) => {
-  if (!dockName) return 'CONG_3';
-  
-  const dockCode = extractDockCode(dockName);
-  if (!dockCode) return 'CONG_3';
-  
-  // Cổng 1: D01-D03, C01-C08
-  if (/^D0?[1-3]$/.test(dockCode) || /^C0?[1-8]$/.test(dockCode)) {
-    return 'CONG_1';
-  }
-  
-  // Cổng 2: A02, A03, A2, A3, B1-B9
-  if (/^A0?[23]$/.test(dockCode) || /^B[1-9]$/.test(dockCode)) {
-    return 'CONG_2';
-  }
-  
-  // Cổng 3: B10-B20
-  if (/^B(1[0-9]|20)$/.test(dockCode)) {
-    return 'CONG_3';
-  }
-  
-  return 'CONG_3'; // Default
-};
-
-/**
  * Trích xuất mã dock từ DockName 
  * VD: "DB5" -> "B5" (bỏ chữ D đầu)
  *     "BKD1-DockB10" -> "B10"
@@ -139,6 +112,12 @@ export const determineGateFromDock = (dockName) => {
  */
 export const extractDockCode = (dockName) => {
   if (!dockName) return null;
+  
+  // Pattern NKD: A1.1, A1.2, A2.1, A2.2, A3-A6, WS2, C1-C3
+  const nkdPattern = dockName.match(/^(A\d+\.\d+|A\d+|WS\d+|C\d+)$/i);
+  if (nkdPattern) {
+    return nkdPattern[1].toUpperCase();
+  }
   
   // Pattern 1: DB5, DC8 -> Bỏ chữ D đầu tiên, lấy B5, C8
   if (/^D[A-D]\d{1,2}$/i.test(dockName)) {
@@ -171,6 +150,38 @@ export const extractDockCode = (dockName) => {
   
   console.warn('Cannot extract dock code from:', dockName);
   return null;
+};
+
+/**
+ * Xác định cổng dựa trên DockName (NKD có 1 cổng duy nhất)
+ */
+export const determineGateFromDock = (dockName) => {
+  if (!dockName) return 'CONG_3';
+  
+  const dockCode = extractDockCode(dockName);
+  if (!dockCode) return 'CONG_3';
+  
+  // NKD: Tất cả dock đều qua 1 cổng
+  if (/^(A\d+\.?\d*|WS\d+|C\d+)$/i.test(dockCode)) {
+    return 'GATE_NKD';
+  }
+  
+  // Cổng 1: D01-D03, C01-C08
+  if (/^D0?[1-3]$/.test(dockCode) || /^C0?[1-8]$/.test(dockCode)) {
+    return 'CONG_1';
+  }
+  
+  // Cổng 2: A02, A03, A2, A3, B1-B9
+  if (/^A0?[23]$/.test(dockCode) || /^B[1-9]$/.test(dockCode)) {
+    return 'CONG_2';
+  }
+  
+  // Cổng 3: B10-B20
+  if (/^B(1[0-9]|20)$/.test(dockCode)) {
+    return 'CONG_3';
+  }
+  
+  return 'CONG_3'; // Default
 };
 
 /**

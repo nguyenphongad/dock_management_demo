@@ -18,6 +18,7 @@ const DockMap = ({ vehicles = [], warehouse, kpis }) => {
   const [activeAnimations, setActiveAnimations] = useState([]);
   const [activeDocks, setActiveDocks] = useState(new Set());
   const [dockingTrucks, setDockingTrucks] = useState(new Map());
+  const [occupiedSlots, setOccupiedSlots] = useState(new Map()); // Track slot đã chiếm
   const [realTimeKpis, setRealTimeKpis] = useState({
     currentlyLoading: 0,
     waiting: 0,
@@ -32,49 +33,82 @@ const DockMap = ({ vehicles = [], warehouse, kpis }) => {
     const updateAnimations = () => {
       const storedVehicles = getVehiclesFromStorage();
 
+      console.log('🔄 Updating animations, vehicles:', storedVehicles.length);
+
       if (storedVehicles.length === 0) return;
 
       const categorized = categorizeVehiclesByTime(storedVehicles);
+      
+      console.log('📊 Categorized vehicles:', {
+        waiting: categorized.waiting.length,
+        entering: categorized.entering.length,
+        loading: categorized.loading.length,
+        exiting: categorized.exiting.length,
+        completed: categorized.completed.length
+      });
 
-      // Cập nhật docking trucks với SLOT POSITION
+      // ===== XỬ LÝ XE ĐANG LOADING (DOCKED) =====
       const dockingMap = new Map();
-      const slotCounters = {}; // Track số slot đã dùng cho mỗi dock
+      const slotMap = new Map(); // Track occupied slots
       
       categorized.loading.forEach(vehicle => {
         const dockCode = extractDockCode(vehicle.DockName);
         if (dockCode) {
-          // Đếm số xe đang ở dock này
-          if (!slotCounters[dockCode]) {
-            slotCounters[dockCode] = 0;
+          // Lấy slot từ occupiedSlots hoặc assign mới
+          let slotPosition = 1;
+          const existingSlots = Array.from(slotMap.entries())
+            .filter(([key]) => key.startsWith(dockCode))
+            .map(([, slot]) => slot);
+          
+          if (existingSlots.length > 0) {
+            slotPosition = Math.max(...existingSlots) + 1;
           }
-          slotCounters[dockCode]++;
           
-          const slotPosition = slotCounters[dockCode]; // 1, 2, 3...
-          
-          // Chỉ hiển thị tối đa 2 xe (2 slots)
           if (slotPosition <= 2) {
-            dockingMap.set(`${dockCode}_slot${slotPosition}`, {
+            const key = `${dockCode}_slot${slotPosition}`;
+            dockingMap.set(key, {
               plateNumber: vehicle.RegNo,
               dockCode: dockCode,
               dockName: vehicle.DockName,
-              slotPosition: slotPosition
+              slotPosition: slotPosition,
+              vehicleId: vehicle.ID
             });
+            slotMap.set(key, slotPosition);
           }
         }
       });
+      
       setDockingTrucks(dockingMap);
+      setOccupiedSlots(slotMap);
 
-      // Animation cho xe đang entering - HIỂN THỊ TruckAnimation
+      // ===== XE ĐANG VÀO (ENTERING) =====
       const enteringAnimations = categorized.entering
-        .filter(vehicle => !processedVehicleIds.current.has(`entering_${vehicle.ID}`))
+        .filter(vehicle => {
+          const alreadyProcessed = processedVehicleIds.current.has(`entering_${vehicle.ID}`);
+          const alreadyDocked = Array.from(dockingTrucks.values())
+            .some(t => t.vehicleId === vehicle.ID);
+          
+          console.log(`🔍 Checking vehicle ${vehicle.RegNo}:`, {
+            alreadyProcessed,
+            alreadyDocked,
+            shouldAnimate: !alreadyProcessed && !alreadyDocked
+          });
+          
+          return !alreadyProcessed && !alreadyDocked;
+        })
         .map(vehicle => {
           const dockCode = extractDockCode(vehicle.DockName);
           const fromGate = determineGateFromDock(vehicle.DockName);
           const animationInfo = calculateAnimationDuration(vehicle);
 
+          const existingSlots = Array.from(slotMap.entries())
+            .filter(([key]) => key.startsWith(dockCode))
+            .map(([, slot]) => slot);
+          const slotPosition = existingSlots.length > 0 ? Math.max(...existingSlots) + 1 : 1;
+
           processedVehicleIds.current.add(`entering_${vehicle.ID}`);
 
-          return {
+          const animation = {
             id: `entering_${vehicle.ID}`,
             vehicleId: vehicle.ID,
             plateNumber: vehicle.RegNo,
@@ -83,11 +117,17 @@ const DockMap = ({ vehicles = [], warehouse, kpis }) => {
             toGate: fromGate,
             dockName: vehicle.DockName,
             phase: 'entering',
-            duration: animationInfo?.duration || 4000
+            duration: animationInfo?.duration || 5000,
+            slotPosition: Math.min(slotPosition, 2)
           };
+          
+          console.log(`✅ Created ENTERING animation:`, animation);
+          return animation;
         });
 
-      // Animation cho xe đang exiting - HIỂN THỊ TruckAnimation
+      console.log(`🎬 Total entering animations to add: ${enteringAnimations.length}`);
+
+      // ===== XE ĐANG RA (EXITING) =====
       const exitingAnimations = categorized.exiting
         .filter(vehicle => !processedVehicleIds.current.has(`exiting_${vehicle.ID}`))
         .map(vehicle => {
@@ -106,7 +146,8 @@ const DockMap = ({ vehicles = [], warehouse, kpis }) => {
             toGate: toGate,
             dockName: vehicle.DockName,
             phase: 'exiting',
-            duration: animationInfo?.duration || 4000
+            duration: animationInfo?.duration || 5000,
+            slotPosition: 1
           };
         });
 
@@ -114,6 +155,12 @@ const DockMap = ({ vehicles = [], warehouse, kpis }) => {
         const newAnimations = [...enteringAnimations, ...exitingAnimations];
         const existingIds = new Set(prev.map(a => a.id));
         const filtered = newAnimations.filter(a => !existingIds.has(a.id));
+
+        console.log(`📝 Active animations update:`, {
+          previous: prev.length,
+          new: filtered.length,
+          total: prev.length + filtered.length
+        });
 
         return filtered.length > 0 ? [...prev, ...filtered] : prev;
       });
@@ -130,13 +177,12 @@ const DockMap = ({ vehicles = [], warehouse, kpis }) => {
     };
 
     updateAnimations();
-    const interval = setInterval(updateAnimations, 30000);
+    const interval = setInterval(updateAnimations, 10000); // Giảm xuống 10s
 
     return () => {
       clearInterval(interval);
-      processedVehicleIds.current.clear();
     };
-  }, []);
+  }, [dockingTrucks]);
 
   // Thêm useEffect để tính toán KPIs realtime
   useEffect(() => {
@@ -227,15 +273,32 @@ const DockMap = ({ vehicles = [], warehouse, kpis }) => {
 
   const handleAnimationComplete = (animationId) => {
     console.log('Animation completed:', animationId);
-    // Remove animation khi hoàn thành (cả entering và exiting)
-    setActiveAnimations(prev => prev.filter(a => a.id !== animationId));
+    
+    // CHỈ REMOVE khi EXITING (ra cổng)
+    // KHÔNG REMOVE khi ENTERING (vào dock)
+    setActiveAnimations(prev => prev.filter(a => {
+      if (a.id === animationId && a.phase === 'exiting') {
+        return false; // Remove exiting animations
+      }
+      return true; // Keep entering animations (they stay docked)
+    }));
   };
 
-  const handleDockArrival = (dockCode) => {
+  const handleDockArrival = (dockCode, slotPosition) => {
+    console.log(`✅ Truck arrived at ${dockCode} slot ${slotPosition}`);
     setActiveDocks(prev => new Set([...prev, dockCode]));
+    
+    // KHÔNG cần thêm vào dockingTrucks - để cho update cycle tự động xử lý
   };
 
   const handleDockDeparture = (dockCode) => {
+    console.log(`🚛 Truck departing from dock: ${dockCode}`);
+    
+    // Remove xe khỏi animations entering (khi bắt đầu exiting)
+    setActiveAnimations(prev => prev.filter(a => 
+      !(a.toDock === dockCode && a.phase === 'entering')
+    ));
+    
     setTimeout(() => {
       setActiveDocks(prev => {
         const newSet = new Set(prev);
@@ -251,7 +314,40 @@ const DockMap = ({ vehicles = [], warehouse, kpis }) => {
   const a8SideDocks = ['A2', 'A3'];
 
   const getVehiclesAtDock = (dockCode) => {
-    return vehicles?.filter(v => v.dockName?.includes(dockCode) && v.status === 'loading') || [];
+    const storedVehicles = getVehiclesFromStorage();
+    const categorized = categorizeVehiclesByTime(storedVehicles);
+    
+    // Lấy xe đang loading tại dock này
+    const vehiclesAtDock = categorized.loading
+      .filter(v => {
+        const vDockCode = extractDockCode(v.DockName);
+        return vDockCode === dockCode;
+      })
+      .slice(0, 2) // Tối đa 2 xe
+      .map(v => ({
+        plateNumber: v.RegNo,
+        driverName: v.DriverName,
+        gateInTime: v.GateIn,
+        loadingStartTime: v.LoadingStart,
+        utilizationStatus: calculateUtilizationStatus(v)
+      }));
+    
+    return vehiclesAtDock;
+  };
+
+  // Helper: Tính trạng thái sử dụng dock
+  const calculateUtilizationStatus = (vehicle) => {
+    if (!vehicle.LoadingStart) return 'normal';
+    
+    const now = new Date();
+    const loadingStart = new Date(vehicle.LoadingStart);
+    const minutesLoading = (now - loadingStart) / (1000 * 60);
+    
+    // Gần hết: > 40 phút
+    // Vượt: > 45 phút
+    if (minutesLoading > 45) return 'exceeded';
+    if (minutesLoading > 40) return 'warning';
+    return 'normal';
   };
 
   const miniKpis = [
@@ -318,7 +414,7 @@ const DockMap = ({ vehicles = [], warehouse, kpis }) => {
       </div>
 
       <div className="dock-map__content">
-        {/* TruckAnimation - CHỈ cho xe đang di chuyển (entering/exiting) */}
+        {/* TruckAnimation - BẮT BUỘC hiển thị đến khi docked */}
         {activeAnimations.map(animation => (
           <TruckAnimation
             key={animation.id}
@@ -328,13 +424,14 @@ const DockMap = ({ vehicles = [], warehouse, kpis }) => {
             toGate={animation.toGate}
             phase={animation.phase}
             duration={animation.duration}
+            slotPosition={animation.slotPosition}
             onDockArrival={handleDockArrival}
             onDockDeparture={handleDockDeparture}
             onAnimationComplete={() => handleAnimationComplete(animation.id)}
           />
         ))}
 
-        {/* DockingTruck với slot position */}
+        {/* DockingTruck - BACKUP khi reload */}
         {Array.from(dockingTrucks.values()).map(truck => (
           <DockingTruck
             key={`docking_${truck.dockCode}_slot${truck.slotPosition}`}

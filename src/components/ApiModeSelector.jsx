@@ -43,7 +43,7 @@ const ApiModeSelector = () => {
           className="api-mode-dropdown"
         >
           <option value="api">🌐 Mondelez</option>
-          <option value="sample">📂 Sample</option>
+          {/* <option value="sample">📂 Sample</option> */}
         </select>
         <span className={`mode-indicator ${currentMode}`}>
           {currentMode === 'api' ? '● LIVE' : '● TEST'}

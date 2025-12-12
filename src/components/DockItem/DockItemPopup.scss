@@ -1,0 +1,304 @@
+.dock-popup {
+  position: absolute;
+  z-index: 200000000; // Rất cao để luôn nằm trên cùng
+  pointer-events: none;
+  animation: fadeInPopup 0.3s ease-out;
+  
+  // Position variants - BÊN NGOÀI dock item
+  &--top {
+    bottom: calc(100% + 12px); // Cách dock item 12px
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  &--bottom {
+    top: calc(100% + 12px); // Cách dock item 12px
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  &--left {
+    right: calc(100% + 12px); // Cách dock item 12px
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  &--right {
+    left: calc(100% + 12px); // Cách dock item 12px
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  
+  // Arrow pointing to dock
+  &__arrow {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-style: solid;
+  }
+  
+  &--top &__arrow {
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 8px 8px 0 8px;
+    border-color: #2c3e50 transparent transparent transparent;
+  }
+  
+  &--bottom &__arrow {
+    top: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 0 8px 8px 8px;
+    border-color: transparent transparent #2c3e50 transparent;
+  }
+  
+  &--left &__arrow {
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 8px 0 8px 8px;
+    border-color: transparent transparent transparent #2c3e50;
+  }
+  
+  &--right &__arrow {
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 8px 8px 8px 0;
+    border-color: transparent #2c3e50 transparent transparent;
+  }
+  
+  &__content {
+    background: linear-gradient(135deg, #2c3e50 0%, #1a252f 100%);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    min-width: 280px;
+    max-width: 320px;
+    border: 2px solid #3498db;
+  }
+  
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(52, 152, 219, 0.1);
+    border-bottom: 1px solid rgba(52, 152, 219, 0.3);
+    
+    h4 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #3498db;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .vehicle-count {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #95a5a6;
+      background: rgba(149, 165, 166, 0.2);
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+  }
+  
+  &__body {
+    padding: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+    
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: rgba(52, 152, 219, 0.5);
+      border-radius: 2px;
+      
+      &:hover {
+        background: rgba(52, 152, 219, 0.7);
+      }
+    }
+  }
+}
+
+// No vehicle message
+.no-vehicle-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  text-align: center;
+  color: #95a5a6;
+  
+  svg {
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+  
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    font-style: italic;
+  }
+}
+
+// Vehicle list
+.vehicle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.vehicle-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  border-left: 3px solid #3498db;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background: rgba(52, 152, 219, 0.1);
+    transform: translateX(4px);
+  }
+  
+  &__icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    border-radius: 6px;
+    color: white;
+  }
+  
+  &__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: #ecf0f1;
+    
+    .label {
+      color: #95a5a6;
+      font-size: 0.8rem;
+    }
+    
+    .value {
+      color: #ecf0f1;
+      font-weight: 500;
+    }
+    
+    strong.value {
+      color: #3498db;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+    
+    svg {
+      color: #95a5a6;
+      flex-shrink: 0;
+    }
+  }
+  
+  &__status {
+    margin-top: 4px;
+  }
+}
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 10px;
+  
+  &--normal {
+    background: rgba(46, 204, 113, 0.2);
+    color: #27ae60;
+  }
+  
+  &--warning {
+    background: rgba(243, 156, 18, 0.2);
+    color: #f39c12;
+  }
+  
+  &--exceeded {
+    background: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+  }
+}
+
+// Animation
+@keyframes fadeInPopup {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+// Variants cho các hướng khác
+.dock-popup--bottom {
+  @keyframes fadeInPopup {
+    0% {
+      opacity: 0;
+      transform: translateX(-50%) translateY(8px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+}
+
+.dock-popup--left {
+  @keyframes fadeInPopup {
+    0% {
+      opacity: 0;
+      transform: translateY(-50%) translateX(-8px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(-50%) translateX(0);
+    }
+  }
+}
+
+.dock-popup--right {
+  @keyframes fadeInPopup {
+    0% {
+      opacity: 0;
+      transform: translateY(-50%) translateX(8px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(-50%) translateX(0);
+    }
+  }
+}

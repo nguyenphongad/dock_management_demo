@@ -22,7 +22,7 @@ const DockingTruck = ({ plateNumber, dockCode, slotPosition = 1 }) => {
         
         // Xác định hướng xe dựa trên khu vực
         const dockArea = getDockArea(dockCode);
-        const truckRotation = getTruckRotation(dockArea);
+        const truckRotation = getTruckRotation(dockCode);
         setRotation(truckRotation);
         
         console.log(`🚛 DockingTruck at ${dockCode} slot ${slotPosition}:`, slotPos);
@@ -51,12 +51,27 @@ const DockingTruck = ({ plateNumber, dockCode, slotPosition = 1 }) => {
   };
 
   // Tính góc quay cho xe
-  const getTruckRotation = (area) => {
+  const getTruckRotation = (dockCode) => {
+    // Dock NGANG (horizontal): A2, A3, D1, D2, D3
+    if (/^[AD][1-3]$/.test(dockCode)) {
+      // A2, A3, D1, D2, D3: xe nằm NGANG (0° hoặc 180°)
+      // Xác định hướng dựa trên vị trí dock
+      if (dockCode.startsWith('D')) {
+        // D1-D3 (A10): đầu xe hướng ra PHẢI (0°)
+        return 0;
+      } else {
+        // A2-A3 (A8): đầu xe hướng ra TRÁI (180°)
+        return 180;
+      }
+    }
+    
+    // Dock DỌC (vertical): B1-B20, C1-C8
+    const area = getDockArea(dockCode);
     if (area === 'A10') {
-      // A10 (trên): đầu xe quay lên trên = -90°
+      // A10 (C1-C8): đầu xe quay lên trên = -90°
       return -90;
     } else {
-      // A8 (dưới): đầu xe quay xuống dưới = 90°
+      // A8 (B1-B20): đầu xe quay xuống dưới = 90°
       return 90;
     }
   };

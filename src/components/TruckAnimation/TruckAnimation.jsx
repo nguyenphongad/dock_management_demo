@@ -12,6 +12,7 @@ const TruckAnimation = ({
   toGate,
   phase = 'entering',
   duration = 4000,
+  slotPosition = 1,
   onDockArrival,
   onDockDeparture,
   onAnimationComplete 
@@ -21,71 +22,143 @@ const TruckAnimation = ({
   const [animationPhase, setAnimationPhase] = useState(phase);
   const [isReady, setIsReady] = useState(false);
   const [isDocked, setIsDocked] = useState(false);
-  const [progress, setProgress] = useState(0); // Theo dõi tiến độ
+  const [isVisible, setIsVisible] = useState(true);
+  const [progress, setProgress] = useState(0);
   const hasAnimated = useRef(false);
   const animationId = useRef(null);
+
+  // Log để debug
+  useEffect(() => {
+    console.log(`🚛 TruckAnimation CREATED: ${plateNumber}`, {
+      phase,
+      fromGate,
+      toDock,
+      slotPosition
+    });
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsReady(true);
+      console.log(`✅ TruckAnimation READY: ${plateNumber}`);
     }, 100);
 
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (!isReady || hasAnimated.current) return;
+    if (!isReady || hasAnimated.current) {
+      console.log(`⏸️ TruckAnimation WAITING: ${plateNumber}`, { isReady, hasAnimated: hasAnimated.current });
+      return;
+    }
 
     const runAnimation = async () => {
       try {
         hasAnimated.current = true;
+        console.log(`🎬 TruckAnimation STARTED: ${plateNumber} - ${phase}`);
         
+        // Tính toán positions - THÊM TIMEOUT để đảm bảo DOM đã render
+        await new Promise(resolve => setTimeout(resolve, 200));
         const positions = calculateDockPositions();
-        const paths = createCompletePath(fromGate, toDock, toGate, positions);
         
-        if (!paths.entering.length && !paths.exiting.length) {
-          console.error('Failed to create paths');
-          return;
+        console.log(`📍 Positions calculated:`, {
+          gates: Object.keys(positions.gates),
+          docks: Object.keys(positions.docks),
+          fromGate,
+          toDock
+        });
+
+        // Kiểm tra positions có hợp lệ không
+        if (!positions.gates[fromGate]) {
+          console.error(`❌ Gate not found: ${fromGate}`);
+          // Fallback: set vị trí mặc định
+          positions.gates[fromGate] = { x: 100, y: 100, width: 50, height: 50 };
         }
 
+        if (!positions.docks[toDock]) {
+          console.error(`❌ Dock not found: ${toDock}`);
+          // Fallback: set vị trí mặc định
+          positions.docks[toDock] = { x: 500, y: 300, width: 80, height: 120 };
+        }
+
+        // Tạo path
+        const paths = createCompletePath(fromGate, toDock, toGate, positions, [], slotPosition);
+        
+        console.log(`🛤️ Paths created:`, {
+          enteringLength: paths.entering?.length || 0,
+          exitingLength: paths.exiting?.length || 0,
+          position: paths.position
+        });
+
         if (phase === 'entering') {
-          console.log(`🚛 ${plateNumber}: Starting entering animation to ${toDock}`);
-          setAnimationPhase('entering');
-          const smoothEnteringPath = smoothPath(paths.entering, 15);
-          await animateTruck(smoothEnteringPath, duration * 3, true); // GIÁ TRỊ TỐC ĐỘ X3
+          const enterPath = paths.entering;
           
-          console.log(`✅ ${plateNumber}: Arrived at ${toDock}`);
+          if (!enterPath || enterPath.length === 0) {
+            console.error(`❌ No entering path for ${plateNumber}`);
+            // Tạo path đơn giản từ gate đến dock
+            const gatePos = positions.gates[fromGate];
+            const dockPos = positions.docks[toDock];
+            const simplePath = [
+              { x: gatePos.x, y: gatePos.y },
+              { x: (gatePos.x + dockPos.x) / 2, y: (gatePos.y + dockPos.y) / 2 },
+              { x: dockPos.x, y: dockPos.y }
+            ];
+            console.log(`🔧 Using SIMPLE PATH:`, simplePath);
+            await animateTruck(simplePath, duration, true);
+          } else {
+            console.log(`✅ Animating ENTERING: ${plateNumber} - ${enterPath.length} points`);
+            const smoothEnteringPath = smoothPath(enterPath, 15);
+            await animateTruck(smoothEnteringPath, duration, true);
+          }
           
-          // GỌI callback TRƯỚC
+          console.log(`🎯 ${plateNumber}: ARRIVED at ${toDock} - DOCKED`);
+          
+          setIsDocked(true);
+          setAnimationPhase('docked');
+          setIsVisible(true);
+          
           if (onDockArrival) {
-            onDockArrival(toDock);
+            onDockArrival(toDock, slotPosition);
           }
           
-          // DELAY 800ms để DockingTruck có thời gian xuất hiện
-          await new Promise(resolve => setTimeout(resolve, 800));
-          
-          // Bây giờ mới remove TruckAnimation
-          if (onAnimationComplete) {
-            onAnimationComplete();
-          }
         } else if (phase === 'exiting') {
-          console.log(`🚛 ${plateNumber}: Starting exiting animation from ${toDock}`);
+          console.log(`🚪 ${plateNumber}: EXITING from ${toDock}`);
           setAnimationPhase('exiting');
-          const smoothExitingPath = smoothPath(paths.exiting, 15);
-          await animateTruck(smoothExitingPath, duration * 3, true); // GIÁ TRỊ TỐC ĐỘ X3
+          setIsDocked(false);
           
-          console.log(`✅ ${plateNumber}: Exited to gate`);
+          const exitPath = paths.exiting;
+          
+          if (!exitPath || exitPath.length === 0) {
+            console.error(`❌ No exiting path for ${plateNumber}`);
+            const dockPos = positions.docks[toDock];
+            const gatePos = positions.gates[toGate];
+            const simplePath = [
+              { x: dockPos.x, y: dockPos.y },
+              { x: (dockPos.x + gatePos.x) / 2, y: (dockPos.y + gatePos.y) / 2 },
+              { x: gatePos.x, y: gatePos.y }
+            ];
+            await animateTruck(simplePath, duration, false);
+          } else {
+            const smoothExitingPath = smoothPath(exitPath, 15);
+            await animateTruck(smoothExitingPath, duration, false);
+          }
+          
+          console.log(`✅ ${plateNumber}: EXITED successfully`);
           
           if (onDockDeparture) {
             onDockDeparture(toDock);
           }
           
-          if (onAnimationComplete) {
-            onAnimationComplete();
-          }
+          setTimeout(() => {
+            setIsVisible(false);
+            if (onAnimationComplete) {
+              onAnimationComplete();
+            }
+          }, 500);
         }
       } catch (error) {
-        console.error('Animation error:', error);
+        console.error(`❌ Animation error for ${plateNumber}:`, error);
+        setIsVisible(true); // VẪN GIỮ VISIBLE khi lỗi
       }
     };
 
@@ -96,26 +169,34 @@ const TruckAnimation = ({
         cancelAnimationFrame(animationId.current);
       }
     };
-  }, [isReady, phase]);
+  }, [isReady, phase, slotPosition]);
 
-  const animateTruck = (path, baseDuration, stopRotationBeforeEnd = false) => {
+  const animateTruck = (path, baseDuration, isEntering) => {
     return new Promise((resolve) => {
+      if (!path || path.length === 0) {
+        console.error('❌ Empty path in animateTruck');
+        resolve();
+        return;
+      }
+
       const startTime = Date.now();
       const totalPoints = path.length;
+      
+      console.log(`🎬 Starting animation: ${totalPoints} points, ${baseDuration}ms`);
+      
+      // Set vị trí ban đầu
+      setPosition({ x: path[0].x, y: path[0].y });
       
       const animate = () => {
         const elapsed = Date.now() - startTime;
         const normalizedElapsed = elapsed / baseDuration;
         
         let adjustedProgress;
-        if (animationPhase === 'entering') {
-          // Chậm lại khi gần dock
-          if (normalizedElapsed < 0.6) {
-            adjustedProgress = normalizedElapsed;
-          } else if (normalizedElapsed < 0.8) {
-            adjustedProgress = 0.6 + (normalizedElapsed - 0.6) * 0.7;
+        if (isEntering) {
+          if (normalizedElapsed < 0.7) {
+            adjustedProgress = normalizedElapsed * 0.85;
           } else {
-            adjustedProgress = 0.6 + 0.14 + (normalizedElapsed - 0.8) * 0.4;
+            adjustedProgress = 0.595 + (normalizedElapsed - 0.7) * 0.4;
           }
         } else {
           adjustedProgress = normalizedElapsed;
@@ -140,29 +221,31 @@ const TruckAnimation = ({
         
         let angle = rotation;
         
-        // ===== LOGIC MỚI: VÀO DOCK BẰNG ĐUÔI, RA BẰNG ĐẦU =====
-        if (animationPhase === 'entering') {
-          // Khi vào dock
-          const isNearDock = currentIndex >= totalPoints - 3; // 2 điểm cuối
-          
-          if (!isNearDock) {
-            // Đang đi trên đường: hướng theo chiều di chuyển
-            const dx = next.x - current.x;
-            const dy = next.y - current.y;
-            if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
-              angle = Math.atan2(dy, dx) * (180 / Math.PI);
+        const isHorizontalDock = /^[AD][1-3]$/.test(toDock);
+        const isNearEnd = currentIndex >= totalPoints - 4;
+        
+        if (!isNearEnd) {
+          const dx = next.x - current.x;
+          const dy = next.y - current.y;
+          if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+            angle = Math.atan2(dy, dx) * (180 / Math.PI);
+          }
+        } else if (isEntering) {
+          if (isHorizontalDock) {
+            if (toDock.startsWith('D')) {
+              angle = 0;
+            } else if (toDock.startsWith('A')) {
+              angle = 180;
             }
           } else {
-            // Gần dock: QUAY ĐẦU 180° để LÙI VÀO (đuôi xe vào dock)
-            const dx = next.x - current.x;
-            const dy = next.y - current.y;
-            if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
-              const forwardAngle = Math.atan2(dy, dx) * (180 / Math.PI);
-              angle = forwardAngle + 180; // Quay ngược lại để lùi
+            const area = /^[CD]/.test(toDock) ? 'A10' : 'A8';
+            if (area === 'A10') {
+              angle = 90;
+            } else {
+              angle = -90;
             }
           }
-        } else if (animationPhase === 'exiting') {
-          // Khi ra khỏi dock: TIẾN RA BẰNG ĐẦU XE
+        } else {
           const dx = next.x - current.x;
           const dy = next.y - current.y;
           if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
@@ -176,6 +259,13 @@ const TruckAnimation = ({
         if (progress < 1) {
           animationId.current = requestAnimationFrame(animate);
         } else {
+          console.log(`✅ Animation completed: ${progress * 100}%`);
+          if (isEntering) {
+            const finalRotation = isHorizontalDock 
+              ? (toDock.startsWith('D') ? 0 : 180)
+              : (/^[CD]/.test(toDock) ? -90 : 90);
+            setRotation(finalRotation);
+          }
           resolve();
         }
       };
@@ -184,22 +274,36 @@ const TruckAnimation = ({
     });
   };
 
-  if (!isReady) return null;
+  // LUÔN render khi isReady, bỏ check isVisible
+  if (!isReady) {
+    console.log(`⏳ TruckAnimation NOT READY: ${plateNumber}`);
+    return null;
+  }
 
-  // ĐỔI TỪ SIDE VIEW SANG TOP-DOWN VIEW
+  if (!isVisible) {
+    console.log(`👻 TruckAnimation INVISIBLE: ${plateNumber}`);
+    return null;
+  }
+
+  console.log(`🚛 RENDERING TruckAnimation: ${plateNumber}`, { position, rotation, isDocked, phase: animationPhase });
+
   return (
     <div 
-      className={`truck-animation truck-animation--${animationPhase}`}
+      className={`truck-animation truck-animation--${animationPhase} ${isDocked ? 'truck-animation--docked' : ''}`}
       style={{
         transform: `translate(${position.x}px, ${position.y}px) rotate(${rotation}deg)`,
         transformOrigin: 'center center',
-        transition: 'none'
+        transition: 'none',
+        opacity: isDocked ? 1 : 0.95,
+        zIndex: isDocked ? 100 : 50
       }}
-      data-progress={Math.round(progress * 100)}
+      data-docked={isDocked}
+      data-slot={slotPosition}
+      data-plate={plateNumber}
     >
-      {/* BODY XE 3D - TOP-DOWN VIEW (giống DockingTruck) */}
+      {/* BODY XE - Giống DockingTruck khi docked */}
       <div className={`truck-body truck-body--${animationPhase}`}>
-        {/* THÙNG XE (Container) - Nhìn từ trên xuống */}
+        {/* THÙNG XE */}
         <div className="truck-container">
           <div className="truck-container__top"></div>
           <div className="truck-container__main">
@@ -217,7 +321,7 @@ const TruckAnimation = ({
           <div className="truck-container__bottom"></div>
         </div>
 
-        {/* CABIN XE (Driver) - Nhìn từ trên xuống */}
+        {/* CABIN XE */}
         <div className="truck-cabin">
           <div className="truck-cabin__roof"></div>
           <div className="truck-cabin__body">
@@ -246,6 +350,11 @@ const TruckAnimation = ({
           <span className="smoke"></span>
           <span className="smoke"></span>
         </div>
+
+        {/* ĐÈN CẢNH BÁO khi docked */}
+        {isDocked && (
+          <div className="truck-warning-light"></div>
+        )}
       </div>
 
       {/* BIỂN SỐ XE */}
@@ -256,13 +365,16 @@ const TruckAnimation = ({
         }}
       >
         {plateNumber}
-        {animationPhase === 'entering' && progress > 0.7 && (
-          <span className="truck-plate__reversing"> ⚠️ Đang lùi</span>
+        {animationPhase === 'entering' && progress > 0.7 && !isDocked && (
+          <span className="truck-plate__reversing"> ⚠️ Lùi</span>
+        )}
+        {isDocked && (
+          <span className="truck-plate__status"> 🔴 Loading</span>
         )}
       </div>
 
       {/* THANH TIẾN ĐỘ */}
-      {(animationPhase === 'entering' || animationPhase === 'exiting') && (
+      {!isDocked && (
         <div className="truck-progress">
           <div 
             className="truck-progress__bar" 

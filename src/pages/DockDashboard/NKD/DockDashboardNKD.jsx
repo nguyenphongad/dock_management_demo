@@ -4,7 +4,7 @@ import { fetchDockData } from '../../../redux/thunks/dockThunk';
 import { setSelectedWarehouse } from '../../../redux/slices/dockSlice';
 import { REFRESH_INTERVAL, WAREHOUSE_TYPES } from '../../../utils/constants';
 import DashboardHeader from '../../../components/DashboardHeader/DashboardHeader';
-import DockMap from '../../../components/DockMap/DockMap';
+import DockMapNKD from '../../../components/DockMapNKD/DockMapNKD';
 import DockTable from '../../../components/DockTable/DockTable';
 
 const DockDashboardNKD = () => {
@@ -59,9 +59,8 @@ const DockDashboardNKD = () => {
           </div>
         )}
         
-        {/* Map and Table Container - BỎ BUTTON TOGGLE */}
         <div className={`map-and-table-container ${isTableVisible ? '' : 'map-and-table-container--table-hidden'}`}>
-          <DockMap 
+          <DockMapNKD 
             warehouse={WAREHOUSE_TYPES.NKD}
             kpis={warehouseData.kpis}
           />

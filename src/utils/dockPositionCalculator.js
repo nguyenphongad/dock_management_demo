@@ -13,11 +13,47 @@ export const calculateDockPositions = () => {
     // Lấy container chính
     const mapContent = document.querySelector('.dock-map__content');
     if (!mapContent) {
-      console.warn('Dock map content not found');
-      return positions;
+      console.warn('⚠️ Dock map content not found, using fallback positions');
+      // FALLBACK POSITIONS
+      return {
+        gates: {
+          CONG_1: { x: 50, y: 500, width: 60, height: 40 },
+          CONG_2: { x: 950, y: 500, width: 60, height: 40 },
+          CONG_3: { x: 950, y: 50, width: 60, height: 40 },
+          GATE_NKD: { x: 900, y: 600, width: 60, height: 40 }
+        },
+        docks: {
+          // A10 docks
+          C1: { x: 800, y: 150, width: 60, height: 100, area: 'A10' },
+          C2: { x: 740, y: 150, width: 60, height: 100, area: 'A10' },
+          C3: { x: 680, y: 150, width: 60, height: 100, area: 'A10' },
+          C4: { x: 620, y: 150, width: 60, height: 100, area: 'A10' },
+          C5: { x: 560, y: 150, width: 60, height: 100, area: 'A10' },
+          C6: { x: 500, y: 150, width: 60, height: 100, area: 'A10' },
+          C7: { x: 440, y: 150, width: 60, height: 100, area: 'A10' },
+          C8: { x: 380, y: 150, width: 60, height: 100, area: 'A10' },
+          D1: { x: 900, y: 200, width: 100, height: 60, area: 'A10' },
+          D2: { x: 900, y: 150, width: 100, height: 60, area: 'A10' },
+          D3: { x: 900, y: 100, width: 100, height: 60, area: 'A10' },
+          // A8 docks
+          B1: { x: 850, y: 400, width: 60, height: 100, area: 'A8' },
+          B2: { x: 810, y: 400, width: 60, height: 100, area: 'A8' },
+          B3: { x: 770, y: 400, width: 60, height: 100, area: 'A8' },
+          B4: { x: 730, y: 400, width: 60, height: 100, area: 'A8' },
+          B5: { x: 690, y: 400, width: 60, height: 100, area: 'A8' },
+          // ... thêm B6-B20
+          A2: { x: 950, y: 430, width: 100, height: 60, area: 'A8' },
+          A3: { x: 950, y: 370, width: 100, height: 60, area: 'A8' }
+        },
+        roads: {
+          DUONG_KINH_DO: { x: 500, y: 480, width: 800, height: 40 },
+          DUONG_TRANG_VANG: { x: 500, y: 80, width: 800, height: 40 }
+        }
+      };
     }
 
     const contentRect = mapContent.getBoundingClientRect();
+    console.log('📐 Map content rect:', contentRect);
 
     // Tính vị trí các cổng
     const gates = document.querySelectorAll('.gate-exit');
@@ -118,8 +154,14 @@ export const calculateDockPositions = () => {
       }
     });
 
+    console.log('📍 Calculated positions:', {
+      gates: Object.keys(positions.gates).length,
+      docks: Object.keys(positions.docks).length,
+      roads: Object.keys(positions.roads).length
+    });
+
   } catch (error) {
-    console.error('Error calculating dock positions:', error);
+    console.error('❌ Error calculating dock positions:', error);
   }
 
   return positions;
@@ -146,23 +188,23 @@ export const getAvailablePosition = (dockCode, occupiedPositions) => {
 export const calculatePositionOffset = (position, dockPos, dockCode) => {
   if (!dockPos) return { x: 0, y: 0 };
   
-  // Xác định hướng dock (vertical hoặc horizontal)
-  const isVerticalDock = /^[BC]\d+/.test(dockCode); // B và C là vertical
-  const isHorizontalDock = /^[AD]\d+/.test(dockCode); // A và D là horizontal
+  // Xác định hướng dock
+  const isHorizontalDock = /^[AD][1-3]$/.test(dockCode); // A2, A3, D1, D2, D3
+  const isVerticalDock = /^[BC]\d+/.test(dockCode); // B1-B20, C1-C8
   
-  if (isVerticalDock) {
-    // Dock dọc: slot 1 bên trái, slot 2 bên phải
-    const offsetX = position === 1 ? -20 : 20; // Cách nhau 40px
-    return {
-      x: dockPos.x + offsetX,
-      y: dockPos.y
-    };
-  } else if (isHorizontalDock) {
-    // Dock ngang: slot 1 phía trên, slot 2 phía dưới
-    const offsetY = position === 1 ? -15 : 15; // Cách nhau 30px
+  if (isHorizontalDock) {
+    // Dock NGANG: slot 1 phía TRÊN, slot 2 phía DƯỚI
+    const offsetY = position === 1 ? -15 : 15; // Cách nhau 30px theo chiều dọc
     return {
       x: dockPos.x,
       y: dockPos.y + offsetY
+    };
+  } else if (isVerticalDock) {
+    // Dock DỌC: slot 1 bên TRÁI, slot 2 bên PHẢI
+    const offsetX = position === 1 ? -20 : 20; // Cách nhau 40px theo chiều ngang
+    return {
+      x: dockPos.x + offsetX,
+      y: dockPos.y
     };
   }
   
@@ -180,79 +222,58 @@ export const createPathToDock = (fromGate, toDock, positions, targetPosition = 1
   const dockPos = positions.docks[toDock];
   
   if (!gatePos || !dockPos) {
-    console.error('Gate or dock position not found:', fromGate, toDock);
+    console.error('❌ Gate or dock position not found:', fromGate, toDock);
     return path;
   }
 
+  // Tính vị trí cuối cùng với offset theo slot
   const finalPos = calculatePositionOffset(targetPosition, dockPos, toDock);
   
-  // Điểm dừng trước dock (để chuẩn bị lùi)
-  const approachDistance = 80; // Dừng cách dock 80px để lùi
+  // Điểm tiếp cận dock
+  const isHorizontalDock = /^[AD][1-3]$/.test(toDock);
   const isVerticalDock = /^[BC]\d+/.test(toDock);
   const isA10Dock = /^[CD]\d+/.test(toDock);
   
   let approachPoint;
-  if (isVerticalDock) {
-    // Dock dọc: dừng phía dưới (A8) hoặc phía trên (A10)
-    approachPoint = {
-      x: finalPos.x,
-      y: isA10Dock ? finalPos.y - approachDistance : finalPos.y + approachDistance
-    };
-  } else {
-    // Dock ngang (A2, A3, D1-D3): dừng phía trái
+  const approachDistance = 100; // Tăng khoảng cách tiếp cận
+  
+  if (isHorizontalDock) {
     approachPoint = {
       x: finalPos.x - approachDistance,
       y: finalPos.y
     };
+  } else if (isVerticalDock) {
+    approachPoint = {
+      x: finalPos.x,
+      y: isA10Dock ? finalPos.y - approachDistance : finalPos.y + approachDistance
+    };
   }
 
-  // CỔNG 1 hoặc CỔNG 2 -> Dock B hoặc A
+  // Xây dựng path chi tiết
   if ((fromGate === 'CONG_1' || fromGate === 'CONG_2') && 
       (toDock.startsWith('B') || toDock.startsWith('A'))) {
     
     const roadY = positions.roads.DUONG_KINH_DO?.y || (dockPos.y + 60);
     
-    if (toDock.startsWith('B')) {
-      path.push({ x: gatePos.x, y: gatePos.y }); // Từ cổng
-      path.push({ x: gatePos.x, y: roadY }); // Xuống đường số 8
-      path.push({ x: approachPoint.x, y: roadY }); // Đi dọc đường số 8
-      path.push(approachPoint); // Đến điểm dừng trước dock
-      path.push(finalPos); // Lùi vào dock
-    } else if (toDock.startsWith('A')) {
-      const turnPointX = dockPos.x - 50;
-      
-      path.push({ x: gatePos.x, y: gatePos.y });
-      path.push({ x: gatePos.x, y: roadY });
-      path.push({ x: turnPointX, y: roadY });
-      path.push(approachPoint); // Đến điểm dừng
-      path.push(finalPos); // Lùi vào dock
-    }
+    path.push({ x: gatePos.x, y: gatePos.y });
+    path.push({ x: gatePos.x, y: roadY });
+    path.push({ x: approachPoint.x, y: roadY });
+    path.push(approachPoint);
+    path.push(finalPos);
   }
-  
-  // CỔNG 3 -> Dock C hoặc D
   else if (fromGate === 'CONG_3' && 
            (toDock.startsWith('C') || toDock.startsWith('D'))) {
     
     const roadY = positions.roads.DUONG_TRANG_VANG?.y || (dockPos.y - 60);
     
-    if (toDock.startsWith('C')) {
-      path.push({ x: gatePos.x, y: gatePos.y });
-      path.push({ x: gatePos.x, y: roadY });
-      path.push({ x: approachPoint.x, y: roadY });
-      path.push(approachPoint); // Đến điểm dừng
-      path.push(finalPos); // Lùi vào dock
-    } else if (toDock.startsWith('D')) {
-      const turnPointX = dockPos.x + 50;
-      
-      path.push({ x: gatePos.x, y: gatePos.y });
-      path.push({ x: gatePos.x, y: roadY });
-      path.push({ x: turnPointX, y: roadY });
-      path.push(approachPoint); // Đến điểm dừng
-      path.push(finalPos); // Lùi vào dock
-    }
+    path.push({ x: gatePos.x, y: gatePos.y });
+    path.push({ x: gatePos.x, y: roadY });
+    path.push({ x: approachPoint.x, y: roadY });
+    path.push(approachPoint);
+    path.push(finalPos);
   }
 
-  console.log(`📍 Path with reversing: ${fromGate} -> ${toDock}`, path);
+  console.log(`📍 Path to ${toDock} slot ${targetPosition}:`, path.length, 'points');
   return path;
 };
 
@@ -345,11 +366,11 @@ export const createPathFromDock = (fromDock, toGate, positions, fromPosition = 1
 /**
  * Tạo đường đi hoàn chỉnh với xử lý vị trí
  */
-export const createCompletePath = (fromGate, dock, toGate, positions, occupiedPositions = []) => {
-  const targetPosition = getAvailablePosition(dock, occupiedPositions);
+export const createCompletePath = (fromGate, dock, toGate, positions, occupiedPositions = [], requestedPosition = null) => {
+  const targetPosition = requestedPosition || getAvailablePosition(dock, occupiedPositions);
   
   if (targetPosition === null) {
-    console.warn('Dock is full:', dock);
+    console.warn('⚠️ Dock is full:', dock);
     return {
       entering: [],
       exiting: [],
@@ -357,9 +378,14 @@ export const createCompletePath = (fromGate, dock, toGate, positions, occupiedPo
     };
   }
 
+  const enteringPath = createPathToDock(fromGate, dock, positions, targetPosition);
+  const exitingPath = createPathFromDock(dock, toGate, positions, targetPosition);
+
+  console.log(`✅ Complete path for ${dock} slot ${targetPosition} created`);
+
   return {
-    entering: createPathToDock(fromGate, dock, positions, targetPosition),
-    exiting: createPathFromDock(dock, toGate, positions, targetPosition),
+    entering: enteringPath,
+    exiting: exitingPath,
     position: targetPosition
   };
 };
