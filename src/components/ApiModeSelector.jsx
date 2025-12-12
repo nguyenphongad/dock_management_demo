@@ -5,7 +5,7 @@ import '../styles/ApiModeSelector.scss';
 
 const ApiModeSelector = () => {
   const dispatch = useDispatch();
-  const currentMode = useSelector(state => state.apiMode?.mode || 'sample');
+  const currentMode = useSelector(state => state.apiMode?.mode || 'api'); // Mặc định 'api' thay vì 'sample'
   const [showNotification, setShowNotification] = useState(false);
 
   // Hiển thị thông báo khi component mount nếu có mode đã lưu
@@ -13,8 +13,12 @@ const ApiModeSelector = () => {
     const savedMode = localStorage.getItem('apiMode');
     if (savedMode) {
       console.log('Loaded API mode from localStorage:', savedMode);
+    } else {
+      // Nếu chưa có mode trong localStorage, set mặc định là 'api'
+      dispatch(setApiMode('api'));
+      console.log('Set default API mode to: api (Mondelez)');
     }
-  }, []);
+  }, [dispatch]);
 
   const handleModeChange = (e) => {
     const newMode = e.target.value;
@@ -38,8 +42,8 @@ const ApiModeSelector = () => {
           onChange={handleModeChange}
           className="api-mode-dropdown"
         >
-          <option value="sample">📂 Sample</option>
           <option value="api">🌐 Mondelez</option>
+          <option value="sample">📂 Sample</option>
         </select>
         <span className={`mode-indicator ${currentMode}`}>
           {currentMode === 'api' ? '● LIVE' : '● TEST'}

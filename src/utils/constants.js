@@ -19,7 +19,9 @@ export const VEHICLE_STATUS = {
 
 export const DOCK_STATUS = {
   EMPTY: 'empty',
-  LOADING: 'loading'
+  LOADING: 'loading',
+  WARNING: 'warning',
+  EXCEEDED: 'exceeded'
 };
 
 export const UTILIZATION_STATUS = {
@@ -45,3 +47,8 @@ export const KPI_THRESHOLDS = {
 
 // Export token từ config
 export const DEFAULT_TOKEN = TOKEN_FROM_CONFIG;
+
+export const API_ENDPOINTS = {
+  BKD: '/api/dock/bkd',
+  NKD: '/api/dock/nkd'
+};

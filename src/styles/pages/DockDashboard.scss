@@ -18,6 +18,7 @@
     flex-direction: column;
     overflow: hidden;
     padding: 0;
+    position: relative;
 
     .alert {
       margin: 0.5rem 1rem 0 1rem;
@@ -57,8 +58,111 @@
       min-height: 0;
     }
   }
+
+  // ===== NÚT TOGGLE MAP & TABLE =====
+  .map-table-toggle {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1000;
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    border: none;
+    border-radius: 8px 0 0 8px;
+    padding: 12px 8px;
+    cursor: pointer;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.3s ease;
+    color: white;
+    font-weight: 600;
+
+    &:hover {
+      background: linear-gradient(135deg, #2980b9 0%, #1f5f8b 100%);
+      padding-right: 12px;
+      box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
+    }
+
+    &:active {
+      transform: translateY(-50%) scale(0.95);
+    }
+
+    svg {
+      transition: transform 0.3s ease;
+    }
+
+    &--open {
+      svg {
+        animation: pulseLeft 2s ease-in-out infinite;
+      }
+    }
+
+    &--closed {
+      background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+
+      &:hover {
+        background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+      }
+
+      svg {
+        animation: pulseRight 2s ease-in-out infinite;
+      }
+    }
+
+    .toggle-text {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+    }
+  }
+
+  // // ===== MAP AND TABLE CONTAINER =====
+  // .map-and-table-container {
+  //   display: flex;
+  //   gap: 20px;
+  //   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+
+  //   // Default state: Cả 2 hiển thị
+  //   .dock-map {
+  //     flex: 1;
+  //     min-width: 0;
+  //     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  //   }
+
+  //   .dock-table {
+  //     width: 400px;
+  //     flex-shrink: 0;
+  //     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  //     opacity: 1;
+  //     transform: translateX(0);
+  //   }
+
+  //   // State khi ẩn table: DockMap expand toàn màn hình
+  //   &--table-hidden {
+  //     .dock-map {
+  //       flex: 1;
+  //       width: 100%;
+  //     }
+
+  //     .dock-table {
+  //       width: 0;
+  //       opacity: 0;
+  //       transform: translateX(100%);
+  //       overflow: hidden;
+  //       padding: 0;
+  //       margin: 0;
+  //       pointer-events: none;
+  //     }
+  //   }
+  // }
 }
 
+// ===== ANIMATIONS =====
 @keyframes slideDown {
   from {
     opacity: 0;
@@ -67,5 +171,66 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes pulseLeft {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-3px);
+  }
+}
+
+@keyframes pulseRight {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+}
+
+// ===== RESPONSIVE =====
+@media (max-width: 1400px) {
+  .map-and-table-container {
+    .dock-table {
+      width: 350px;
+    }
+  }
+}
+
+@media (max-width: 1200px) {
+  .map-and-table-container {
+    flex-direction: column;
+
+    .dock-table {
+      width: 100%;
+    }
+
+    &--table-hidden {
+      .dock-table {
+        height: 0;
+        transform: translateY(100%);
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .map-table-toggle {
+    padding: 10px 6px;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .toggle-text {
+      font-size: 9px;
+    }
   }
 }

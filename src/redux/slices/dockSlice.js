@@ -7,6 +7,18 @@ import {
   // Không cần import fetchDockDataByDateRange vì nó là alias
 } from '../thunks/dockThunk';
 
+const WAREHOUSE_STORAGE_KEY = 'selected_warehouse';
+
+// Đọc warehouse từ localStorage khi khởi động
+const getInitialWarehouse = () => {
+  try {
+    const saved = localStorage.getItem(WAREHOUSE_STORAGE_KEY);
+    return saved || 'BKD';
+  } catch {
+    return 'BKD';
+  }
+};
+
 // Initial state cho mỗi warehouse
 const warehouseInitialState = {
   vehicles: [],
@@ -25,10 +37,17 @@ const warehouseInitialState = {
 };
 
 const initialState = {
-  BKD: { ...warehouseInitialState },
-  NKD: { ...warehouseInitialState },
+  selectedWarehouse: getInitialWarehouse(),
   autoRefresh: true,
-  selectedWarehouse: 'BKD',
+  isChangingWarehouse: false, // ✅ Thêm state này
+  BKD: {
+    docks: [],
+    kpis: {},
+    loading: false,
+    error: null,
+    lastUpdated: null
+  },
+  NKD: { ...warehouseInitialState },
   refreshInterval: 30000 // 30 seconds
 };
 
@@ -46,7 +65,20 @@ const dockSlice = createSlice({
       const warehouse = action.payload;
       if (warehouse === 'BKD' || warehouse === 'NKD') {
         state.selectedWarehouse = warehouse;
+        state.isChangingWarehouse = true; // ✅ Set loading khi đổi warehouse
+        // Lưu vào localStorage
+        try {
+          localStorage.setItem(WAREHOUSE_STORAGE_KEY, warehouse);
+        } catch (error) {
+          console.error('Failed to save warehouse to localStorage:', error);
+        }
       }
+    },
+    setWarehouseChangeLoading: (state, action) => {
+      state.isChangingWarehouse = action.payload;
+    },
+    clearWarehouseChangeLoading: (state) => {
+      state.isChangingWarehouse = false;
     },
     
     // Xóa error của warehouse cụ thể
@@ -155,10 +187,12 @@ const dockSlice = createSlice({
 export const {
   setAutoRefresh,
   setSelectedWarehouse,
+  setWarehouseChangeLoading,
   clearError,
   clearAllErrors,
   resetWarehouseData,
-  setRefreshInterval
+  setRefreshInterval,
+  clearWarehouseChangeLoading
 } = dockSlice.actions;
 
 // Selectors

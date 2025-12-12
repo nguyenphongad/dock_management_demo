@@ -1,18 +1,19 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-// Lấy mode từ localStorage, nếu không có thì mặc định là 'sample'
+const API_MODE_KEY = 'apiMode';
+
+// Đọc từ localStorage, nếu không có thì mặc định là 'api' (Mondelez)
 const getInitialMode = () => {
   try {
-    const savedMode = localStorage.getItem('apiMode');
-    return savedMode || 'sample';
-  } catch (error) {
-    console.error('Error reading apiMode from localStorage:', error);
-    return 'sample';
+    const saved = localStorage.getItem(API_MODE_KEY);
+    return saved || 'api'; // Mặc định 'api' thay vì 'sample'
+  } catch {
+    return 'api';
   }
 };
 
 const initialState = {
-  mode: getInitialMode(), // 'sample' hoặc 'api'
+  mode: getInitialMode() // 'api' hoặc 'sample'
 };
 
 const apiModeSlice = createSlice({
@@ -23,24 +24,14 @@ const apiModeSlice = createSlice({
       state.mode = action.payload;
       // Lưu vào localStorage
       try {
-        localStorage.setItem('apiMode', action.payload);
-        console.log('API Mode changed to:', action.payload);
+        localStorage.setItem(API_MODE_KEY, action.payload);
+        console.log('API mode saved to localStorage:', action.payload);
       } catch (error) {
-        console.error('Error saving apiMode to localStorage:', error);
-      }
-    },
-    toggleApiMode: (state) => {
-      state.mode = state.mode === 'sample' ? 'api' : 'sample';
-      // Lưu vào localStorage
-      try {
-        localStorage.setItem('apiMode', state.mode);
-        console.log('API Mode toggled to:', state.mode);
-      } catch (error) {
-        console.error('Error saving apiMode to localStorage:', error);
+        console.error('Failed to save API mode to localStorage:', error);
       }
     }
   }
 });
 
-export const { setApiMode, toggleApiMode } = apiModeSlice.actions;
+export const { setApiMode } = apiModeSlice.actions;
 export default apiModeSlice.reducer;

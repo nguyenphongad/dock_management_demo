@@ -1,16 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import { MdChevronLeft, MdChevronRight } from 'react-icons/md';
 import { 
   getVehiclesFromStorage, 
   categorizeVehiclesByTime,
   extractDockCode 
 } from '../../utils/vehicleStorageManager';
 
-const DockTable = ({ docks, kpis }) => {
+const DockTable = ({ docks = [], kpis = {}, isVisible: isVisibleProp = true, onToggleVisibility }) => {
   const [insideWarehouseVehicles, setInsideWarehouseVehicles] = useState([]);
   const [waitingVehicles, setWaitingVehicles] = useState([]);
   const [enteringVehicles, setEnteringVehicles] = useState([]);
   const [isWaitingCollapsed, setIsWaitingCollapsed] = useState(false);
+  const [isVisible, setIsVisible] = useState(isVisibleProp);
+
+  // Sync với prop từ parent
+  useEffect(() => {
+    setIsVisible(isVisibleProp);
+  }, [isVisibleProp]);
+
+  // Hàm toggle visibility
+  const handleToggle = () => {
+    const newVisibility = !isVisible;
+    setIsVisible(newVisibility);
+    if (onToggleVisibility) {
+      onToggleVisibility(newVisibility);
+    }
+  };
 
   // Hàm kiểm tra dock có hợp lệ không
   const isValidDock = (dockName) => {
@@ -48,12 +64,11 @@ const DockTable = ({ docks, kpis }) => {
       const storedVehicles = getVehiclesFromStorage();
       const categorized = categorizeVehiclesByTime(storedVehicles);
       
-      // Xe đang trong kho - CHỈ LỌC CÁC DOCK HỢP LỆ
       const insideVehicles = [
         ...categorized.entering,
         ...categorized.loading
       ]
-        .filter(v => isValidDock(v.DockName)) // Thêm filter ở đây
+        .filter(v => isValidDock(v.DockName))
         .map(v => ({
           ...v,
           dockCode: extractDockCode(v.DockName),
@@ -62,7 +77,6 @@ const DockTable = ({ docks, kpis }) => {
             : 'Đang làm hàng'
         }));
       
-      // Xe đang chờ - KHÔNG LỌC, GIỮ NGUYÊN TẤT CẢ
       const waitingWithDockCode = categorized.waiting.map(v => ({
         ...v,
         dockCode: extractDockCode(v.DockName)
@@ -95,134 +109,140 @@ const DockTable = ({ docks, kpis }) => {
   const allWaitingVehicles = [...waitingVehicles, ...enteringVehicles];
 
   return (
-    <div className="dock-table">
-      <h3 className="dock-table__title">Bảng Giám Sát Dock</h3>
+    <div className={`dock-table ${isVisible ? 'dock-table--visible' : 'dock-table--hidden'}`}>
+      <h3 className="dock-table__title">📋 Bảng Giám Sát Dock</h3>
 
-      {/* Bảng xe đang trong kho */}
-      <div className="dock-table__vehicles-section">
-        <h4 className="vehicles-section__title">
-          🚛 Xe đang trong kho ({insideWarehouseVehicles.length})
-        </h4>
-        <div className="vehicles-section__content">
-          {insideWarehouseVehicles.length === 0 ? (
-            <div className="no-vehicles">Không có xe nào trong kho</div>
-          ) : (
-            <table className="vehicles-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Biển số</th>
-                  <th>Dock</th>
-                  <th>Tài xế</th>
-                  <th>Trạng thái</th>
-                  <th>Vào cổng</th>
-                </tr>
-              </thead>
-              <tbody>
-                {insideWarehouseVehicles.map((vehicle) => (
-                  <tr key={vehicle.ID}>
-                    <td className="cell-id">{vehicle.ID}</td>
-                    <td className="cell-regno">
-                      <strong>{vehicle.RegNo}</strong>
-                    </td>
-                    <td className="cell-dock">
-                      <span className="dock-badge">
-                        {vehicle.dockCode || vehicle.DockName || '-'}
-                      </span>
-                    </td>
-                    <td className="cell-driver">{vehicle.DriverName || '-'}</td>
-                    <td className="cell-status">
-                      <span className={`status-badge ${vehicle.statusText === 'Đang vào' ? 'status-badge--entering' : 'status-badge--loading'}`}>
-                        {vehicle.statusText}
-                      </span>
-                    </td>
-                    <td className="cell-time">
-                      {vehicle.GateIn 
-                        ? new Date(vehicle.GateIn).toLocaleString('vi-VN', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })
-                        : '-'
-                      }
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-
-      {/* Bảng xe chờ & đang vào - Tích hợp WaitingAreaTable */}
-      <div className="dock-table__vehicles-section">
-        <div className="vehicles-section__header">
-          <h4 className="vehicles-section__title">
-            🚗 Bãi chờ & Đang vào ({allWaitingVehicles.length})
-          </h4>
-          <div className="vehicles-section__stats">
-            Chờ: {waitingVehicles.length} | Đang vào: {enteringVehicles.length}
+      <div className="dock-table__content">
+        {/* Bảng xe đang trong kho */}
+        <div className="vehicle-section">
+          <div className="vehicle-section__header">
+            <h4 className="vehicle-section__title">
+              🚛 Xe trong kho <span>({insideWarehouseVehicles.length})</span>
+            </h4>
           </div>
-          <button 
-            className="vehicles-section__toggle"
-            onClick={() => setIsWaitingCollapsed(!isWaitingCollapsed)}
-            title={isWaitingCollapsed ? "Mở rộng" : "Thu gọn"}
-          >
-            {isWaitingCollapsed ? <FiChevronDown size={18} /> : <FiChevronUp size={18} />}
-          </button>
-        </div>
-        
-        <div className={`vehicles-section__content ${isWaitingCollapsed ? 'vehicles-section__content--collapsed' : ''}`}>
-          {allWaitingVehicles.length === 0 ? (
-            <div className="no-vehicles">Không có xe đang chờ</div>
-          ) : (
-            <table className="vehicles-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Biển số</th>
-                  <th>Dock dự kiến</th>
-                  <th>Tài xế</th>
-                  <th>Trạng thái</th>
-                  <th>Vào cổng</th>
-                </tr>
-              </thead>
-              <tbody>
-                {allWaitingVehicles.map((vehicle) => {
-                  const isEntering = enteringVehicles.some(v => v.ID === vehicle.ID);
-                  return (
-                    <tr key={vehicle.ID} className={isEntering ? 'row-entering' : ''}>
-                      <td className="cell-id">{vehicle.ID}</td>
-                      <td className="cell-regno">
+          <div className="vehicle-section__content">
+            {insideWarehouseVehicles.length === 0 ? (
+              <div className="no-vehicles">Không có xe nào trong kho</div>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Biển số</th>
+                    <th>Dock</th>
+                    <th>Tài xế</th>
+                    <th>Trạng thái</th>
+                    <th>Vào cổng</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {insideWarehouseVehicles.map((vehicle) => (
+                    <tr key={vehicle.ID}>
+                      <td>{vehicle.ID}</td>
+                      <td>
                         <strong>{vehicle.RegNo}</strong>
                       </td>
-                      <td className="cell-dock">
-                        <span className="dock-badge">
+                      <td>
+                        <span className="badge badge--loading">
                           {vehicle.dockCode || vehicle.DockName || '-'}
                         </span>
                       </td>
-                      <td className="cell-driver">{vehicle.DriverName || 'Chưa cập nhật'}</td>
-                      <td className="cell-status">
-                        <span className={`status-badge ${isEntering ? 'status-badge--entering' : 'status-badge--waiting'}`}>
-                          {isEntering ? '🚗 Đang vào' : vehicle.DockRegisterStatus || 'Đang chờ'}
+                      <td>{vehicle.DriverName || '-'}</td>
+                      <td>
+                        {/* HIỂN THỊ ĐÚNG DockRegisterStatus */}
+                        <span className="badge badge--loading">
+                          {vehicle.DockRegisterStatus || '-'}
                         </span>
                       </td>
-                      <td className="cell-time">
+                      <td>
                         {vehicle.GateIn 
                           ? new Date(vehicle.GateIn).toLocaleString('vi-VN', {
                               hour: '2-digit',
-                              minute: '2-digit',
-                              day: '2-digit',
-                              month: '2-digit'
+                              minute: '2-digit'
                             })
                           : '-'
                         }
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        {/* Bảng xe chờ & đang vào */}
+        <div className="vehicle-section">
+          <div className="vehicle-section__header">
+            <h4 className="vehicle-section__title">
+              🚗 Bãi chờ & Đang vào <span>({allWaitingVehicles.length})</span>
+            </h4>
+            <div className="vehicle-section__stats">
+              Chờ: {waitingVehicles.length} | Đang vào: {enteringVehicles.length}
+            </div>
+            <button 
+              className="vehicle-section__toggle"
+              onClick={() => setIsWaitingCollapsed(!isWaitingCollapsed)}
+              title={isWaitingCollapsed ? "Mở rộng" : "Thu gọn"}
+            >
+              {isWaitingCollapsed ? <FiChevronDown size={16} /> : <FiChevronUp size={16} />}
+            </button>
+          </div>
+          
+          <div className={`vehicle-section__content ${isWaitingCollapsed ? 'vehicle-section__content--collapsed' : ''}`}>
+            {allWaitingVehicles.length === 0 ? (
+              <div className="no-vehicles">Không có xe đang chờ</div>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Biển số</th>
+                    <th>Dock</th>
+                    <th>Tài xế</th>
+                    <th>Trạng thái</th>
+                    <th>Vào cổng</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {allWaitingVehicles.map((vehicle) => {
+                    const isEntering = enteringVehicles.some(v => v.ID === vehicle.ID);
+                    return (
+                      <tr key={vehicle.ID} className={isEntering ? 'row-entering' : ''}>
+                        <td>{vehicle.ID}</td>
+                        <td>
+                          <strong>{vehicle.RegNo}</strong>
+                        </td>
+                        <td>
+                          <span className="badge badge--empty">
+                            {vehicle.dockCode || vehicle.DockName || '-'}
+                          </span>
+                        </td>
+                        <td>{vehicle.DriverName || 'Chưa cập nhật'}</td>
+                        <td>
+                          {/* HIỂN THỊ ĐÚNG DockRegisterStatus */}
+                          <span className="badge badge--waiting">
+                            {vehicle.DockRegisterStatus || '-'}
+                          </span>
+                        </td>
+                        <td>
+                          {vehicle.GateIn 
+                            ? new Date(vehicle.GateIn).toLocaleString('vi-VN', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                day: '2-digit',
+                                month: '2-digit'
+                              })
+                            : '-'
+                          }
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       </div>
     </div>

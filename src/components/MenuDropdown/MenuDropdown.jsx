@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { MdMenu, MdDashboard, MdWarehouse } from 'react-icons/md';
+import { WAREHOUSE_TYPES } from '../../utils/constants';
 import './MenuDropdown.scss';
 
 const MenuDropdown = () => {
@@ -8,6 +10,7 @@ const MenuDropdown = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const dropdownRef = useRef(null);
+  const { selectedWarehouse } = useSelector(state => state.dock);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -22,16 +25,32 @@ const MenuDropdown = () => {
 
   const menuItems = [
     {
-      id: 'dashboard-detail',
-      label: 'Dashboard Detail',
-      icon: <MdDashboard size={20} />,
-      path: '/dashboard-detail'
+      id: 'dock-management-bkd',
+      label: 'Dock Management BKD',
+      icon: <MdWarehouse size={20} />,
+      warehouse: WAREHOUSE_TYPES.BKD,
+      path: '/modelez/dock-bkd'
     },
     {
-      id: 'dock-management',
-      label: 'Dock Management',
+      id: 'dock-management-nkd',
+      label: 'Dock Management NKD',
       icon: <MdWarehouse size={20} />,
-      path: '/'
+      warehouse: WAREHOUSE_TYPES.NKD,
+      path: '/modelez/dock-nkd'
+    },
+    {
+      id: 'dashboard-detail-bkd',
+      label: 'Dashboard Detail BKD',
+      icon: <MdDashboard size={20} />,
+      warehouse: WAREHOUSE_TYPES.BKD,
+      path: '/modelez/dashboard-detail-bkd'
+    },
+    {
+      id: 'dashboard-detail-nkd',
+      label: 'Dashboard Detail NKD',
+      icon: <MdDashboard size={20} />,
+      warehouse: WAREHOUSE_TYPES.NKD,
+      path: '/modelez/dashboard-detail-nkd'
     }
   ];
 
@@ -39,6 +58,11 @@ const MenuDropdown = () => {
     navigate(path);
     setIsOpen(false);
   };
+
+  // Filter menu items based on selected warehouse
+  const filteredMenuItems = menuItems.filter(
+    item => item.warehouse === selectedWarehouse
+  );
 
   return (
     <div className="menu-dropdown" ref={dropdownRef}>
@@ -53,7 +77,7 @@ const MenuDropdown = () => {
 
       {isOpen && (
         <div className="menu-dropdown__content">
-          {menuItems.map(item => (
+          {filteredMenuItems.map(item => (
             <button
               key={item.id}
               className={`menu-dropdown__item ${location.pathname === item.path ? 'menu-dropdown__item--active' : ''}`}

@@ -1,0 +1,80 @@
+import React, { useEffect, useState } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchDockData } from '../../../redux/thunks/dockThunk';
+import { setSelectedWarehouse } from '../../../redux/slices/dockSlice';
+import { REFRESH_INTERVAL, WAREHOUSE_TYPES } from '../../../utils/constants';
+import DashboardHeader from '../../../components/DashboardHeader/DashboardHeader';
+import DockMap from '../../../components/DockMap/DockMap';
+import DockTable from '../../../components/DockTable/DockTable';
+
+const DockDashboardBKD = () => {
+  const dispatch = useDispatch();
+  const { autoRefresh, selectedWarehouse } = useSelector(state => state.dock);
+  const warehouseData = useSelector(state => state.dock[WAREHOUSE_TYPES.BKD]);
+  const [isTableVisible, setIsTableVisible] = useState(true);
+
+  // Đảm bảo warehouse được set đúng và sync với localStorage khi vào page
+  useEffect(() => {
+    if (selectedWarehouse !== WAREHOUSE_TYPES.BKD) {
+      dispatch(setSelectedWarehouse(WAREHOUSE_TYPES.BKD));
+    }
+  }, [dispatch, selectedWarehouse]);
+
+  useEffect(() => {
+    dispatch(fetchDockData({ warehouse: WAREHOUSE_TYPES.BKD }));
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const timer = setInterval(() => {
+      dispatch(fetchDockData({ warehouse: WAREHOUSE_TYPES.BKD }));
+    }, REFRESH_INTERVAL);
+
+    return () => clearInterval(timer);
+  }, [dispatch, autoRefresh]);
+
+  const handleToggleTable = (newVisibility) => {
+    setIsTableVisible(newVisibility);
+  };
+
+  return (
+    <div className="dock-dashboard dock-dashboard--bkd">
+      <DashboardHeader 
+        title="Dock Management - Mondelēz BKD"
+        subtitle="Real-time Monitoring System - Kho BKD"
+        icon="🚛"
+      />
+
+      <div className="dashboard-content">
+        {warehouseData.error && (
+          <div className="alert alert--error">
+            ⚠️ {warehouseData.error}
+          </div>
+        )}
+
+        {warehouseData.lastUpdated && (
+          <div className="last-updated">
+            Cập nhật lần cuối: {new Date(warehouseData.lastUpdated).toLocaleString('vi-VN')}
+          </div>
+        )}
+        
+        {/* Map and Table Container - BỎ BUTTON TOGGLE */}
+        <div className={`map-and-table-container ${isTableVisible ? '' : 'map-and-table-container--table-hidden'}`}>
+          <DockMap 
+            warehouse={WAREHOUSE_TYPES.BKD}
+            kpis={warehouseData.kpis}
+          />
+          <DockTable 
+            docks={warehouseData.docks}
+            kpis={warehouseData.kpis}
+            isVisible={isTableVisible}
+            onToggleVisibility={handleToggleTable}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DockDashboardBKD;

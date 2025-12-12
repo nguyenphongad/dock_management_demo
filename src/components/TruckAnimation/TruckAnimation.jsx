@@ -20,7 +20,8 @@ const TruckAnimation = ({
   const [rotation, setRotation] = useState(0);
   const [animationPhase, setAnimationPhase] = useState(phase);
   const [isReady, setIsReady] = useState(false);
-  const [isDocked, setIsDocked] = useState(false); // Track if truck is docked
+  const [isDocked, setIsDocked] = useState(false);
+  const [progress, setProgress] = useState(0); // Theo dõi tiến độ
   const hasAnimated = useRef(false);
   const animationId = useRef(null);
 
@@ -48,32 +49,30 @@ const TruckAnimation = ({
         }
 
         if (phase === 'entering') {
-          // Xe đang vào dock
           console.log(`🚛 ${plateNumber}: Starting entering animation to ${toDock}`);
           setAnimationPhase('entering');
           const smoothEnteringPath = smoothPath(paths.entering, 15);
-          await animateTruck(smoothEnteringPath, duration, true);
+          await animateTruck(smoothEnteringPath, duration * 3, true); // GIÁ TRỊ TỐC ĐỘ X3
           
           console.log(`✅ ${plateNumber}: Arrived at ${toDock}`);
           
-          // Khi đến dock - đổi sang docking phase NHƯNG KHÔNG remove component
-          setAnimationPhase('docking');
-          setIsDocked(true);
-          
+          // GỌI callback TRƯỚC
           if (onDockArrival) {
             onDockArrival(toDock);
           }
           
-          // KHÔNG gọi onAnimationComplete để component không bị remove
-          // if (onAnimationComplete) {
-          //   onAnimationComplete();
-          // }
+          // DELAY 800ms để DockingTruck có thời gian xuất hiện
+          await new Promise(resolve => setTimeout(resolve, 800));
+          
+          // Bây giờ mới remove TruckAnimation
+          if (onAnimationComplete) {
+            onAnimationComplete();
+          }
         } else if (phase === 'exiting') {
-          // Xe đang ra cổng
           console.log(`🚛 ${plateNumber}: Starting exiting animation from ${toDock}`);
           setAnimationPhase('exiting');
           const smoothExitingPath = smoothPath(paths.exiting, 15);
-          await animateTruck(smoothExitingPath, duration, true);
+          await animateTruck(smoothExitingPath, duration * 3, true); // GIÁ TRỊ TỐC ĐỘ X3
           
           console.log(`✅ ${plateNumber}: Exited to gate`);
           
@@ -81,7 +80,6 @@ const TruckAnimation = ({
             onDockDeparture(toDock);
           }
           
-          // Chỉ remove component khi xe ra cổng xong
           if (onAnimationComplete) {
             onAnimationComplete();
           }
@@ -100,23 +98,39 @@ const TruckAnimation = ({
     };
   }, [isReady, phase]);
 
-  const animateTruck = (path, duration, stopRotationBeforeEnd = false) => {
+  const animateTruck = (path, baseDuration, stopRotationBeforeEnd = false) => {
     return new Promise((resolve) => {
       const startTime = Date.now();
-      let lockedRotation = null;
-      const isA10Path = path.length > 0 && Math.abs(path[0].y - path[path.length - 1].y) > 50;
+      const totalPoints = path.length;
       
       const animate = () => {
         const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
+        const normalizedElapsed = elapsed / baseDuration;
+        
+        let adjustedProgress;
+        if (animationPhase === 'entering') {
+          // Chậm lại khi gần dock
+          if (normalizedElapsed < 0.6) {
+            adjustedProgress = normalizedElapsed;
+          } else if (normalizedElapsed < 0.8) {
+            adjustedProgress = 0.6 + (normalizedElapsed - 0.6) * 0.7;
+          } else {
+            adjustedProgress = 0.6 + 0.14 + (normalizedElapsed - 0.8) * 0.4;
+          }
+        } else {
+          adjustedProgress = normalizedElapsed;
+        }
+        
+        const progress = Math.min(adjustedProgress, 1);
+        setProgress(progress);
         
         const eased = progress < 0.5
           ? 2 * progress * progress
           : 1 - Math.pow(-2 * progress + 2, 2) / 2;
         
-        const currentIndex = Math.floor(eased * (path.length - 1));
-        const nextIndex = Math.min(currentIndex + 1, path.length - 1);
-        const localProgress = (eased * (path.length - 1)) - currentIndex;
+        const currentIndex = Math.floor(eased * (totalPoints - 1));
+        const nextIndex = Math.min(currentIndex + 1, totalPoints - 1);
+        const localProgress = (eased * (totalPoints - 1)) - currentIndex;
         
         const current = path[currentIndex];
         const next = path[nextIndex];
@@ -126,20 +140,29 @@ const TruckAnimation = ({
         
         let angle = rotation;
         
-        if (stopRotationBeforeEnd) {
-          const stopThreshold = isA10Path ? 0.7 : 0.8;
+        // ===== LOGIC MỚI: VÀO DOCK BẰNG ĐUÔI, RA BẰNG ĐẦU =====
+        if (animationPhase === 'entering') {
+          // Khi vào dock
+          const isNearDock = currentIndex >= totalPoints - 3; // 2 điểm cuối
           
-          if (progress < stopThreshold) {
+          if (!isNearDock) {
+            // Đang đi trên đường: hướng theo chiều di chuyển
             const dx = next.x - current.x;
             const dy = next.y - current.y;
             if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
               angle = Math.atan2(dy, dx) * (180 / Math.PI);
-              lockedRotation = angle;
             }
-          } else if (lockedRotation !== null) {
-            angle = lockedRotation;
+          } else {
+            // Gần dock: QUAY ĐẦU 180° để LÙI VÀO (đuôi xe vào dock)
+            const dx = next.x - current.x;
+            const dy = next.y - current.y;
+            if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
+              const forwardAngle = Math.atan2(dy, dx) * (180 / Math.PI);
+              angle = forwardAngle + 180; // Quay ngược lại để lùi
+            }
           }
-        } else {
+        } else if (animationPhase === 'exiting') {
+          // Khi ra khỏi dock: TIẾN RA BẰNG ĐẦU XE
           const dx = next.x - current.x;
           const dy = next.y - current.y;
           if (Math.abs(dx) > 0.1 || Math.abs(dy) > 0.1) {
@@ -163,20 +186,90 @@ const TruckAnimation = ({
 
   if (!isReady) return null;
 
+  // ĐỔI TỪ SIDE VIEW SANG TOP-DOWN VIEW
   return (
     <div 
-      className={`truck-animation truck-animation--${animationPhase} ${isDocked ? 'truck-animation--docked' : ''}`}
+      className={`truck-animation truck-animation--${animationPhase}`}
       style={{
         transform: `translate(${position.x}px, ${position.y}px) rotate(${rotation}deg)`,
         transformOrigin: 'center center',
         transition: 'none'
       }}
+      data-progress={Math.round(progress * 100)}
     >
-      <div className="truck-body">
-        <div className="truck-cabin"></div>
-        <div className="truck-container"></div>
+      {/* BODY XE 3D - TOP-DOWN VIEW (giống DockingTruck) */}
+      <div className={`truck-body truck-body--${animationPhase}`}>
+        {/* THÙNG XE (Container) - Nhìn từ trên xuống */}
+        <div className="truck-container">
+          <div className="truck-container__top"></div>
+          <div className="truck-container__main">
+            <div className="truck-container__ribs">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div className="truck-container__logo"></div>
+          </div>
+          <div className="truck-container__lights">
+            <span className="light-left"></span>
+            <span className="light-right"></span>
+          </div>
+          <div className="truck-container__bottom"></div>
+        </div>
+
+        {/* CABIN XE (Driver) - Nhìn từ trên xuống */}
+        <div className="truck-cabin">
+          <div className="truck-cabin__roof"></div>
+          <div className="truck-cabin__body">
+            <div className="truck-cabin__windshield">
+              <div className="windshield-shine"></div>
+            </div>
+            <div className="truck-cabin__grille">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div className="truck-cabin__headlights">
+              <span className="headlight-left"></span>
+              <span className="headlight-right"></span>
+            </div>
+          </div>
+          <div className="truck-cabin__mirrors">
+            <div className="mirror-left"></div>
+            <div className="mirror-right"></div>
+          </div>
+        </div>
+
+        {/* KHÓI XẢ */}
+        <div className="truck-exhaust">
+          <span className="smoke"></span>
+          <span className="smoke"></span>
+          <span className="smoke"></span>
+        </div>
       </div>
-      <div className="truck-plate">{plateNumber}</div>
+
+      {/* BIỂN SỐ XE */}
+      <div 
+        className="truck-plate"
+        style={{
+          transform: `rotate(${-rotation}deg)`,
+        }}
+      >
+        {plateNumber}
+        {animationPhase === 'entering' && progress > 0.7 && (
+          <span className="truck-plate__reversing"> ⚠️ Đang lùi</span>
+        )}
+      </div>
+
+      {/* THANH TIẾN ĐỘ */}
+      {(animationPhase === 'entering' || animationPhase === 'exiting') && (
+        <div className="truck-progress">
+          <div 
+            className="truck-progress__bar" 
+            style={{ width: `${progress * 100}%` }}
+          ></div>
+        </div>
+      )}
     </div>
   );
 };

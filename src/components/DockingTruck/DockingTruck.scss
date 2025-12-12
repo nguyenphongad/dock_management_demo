@@ -2,79 +2,477 @@
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 50;
+  width: 70px;
+  height: 35px;
+  z-index: 90;
   pointer-events: none;
-  transition: transform 0.3s ease;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
 
   &__body {
-    display: flex;
-    align-items: center;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-  }
-
-  &__cabin {
-    width: 12px;
-    height: 18px;
-    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    border-radius: 2px 2px 0 0;
     position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    animation: truckDock 0.6s ease-in-out infinite;
+  }
+}
 
+// ===== THÙNG XE (Container) - Nhìn từ trên xuống =====
+.docking-truck__container {
+  position: relative;
+  width: 45px;
+  height: 100%;
+  order: 1;
+  
+  &-main {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 50%, #922b21 100%);
+    border: 2px solid #7b241c;
+    border-radius: 2px;
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.2),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.3),
+      0 0 15px rgba(231, 76, 60, 0.4);
+    
+    // Viền sáng bên trái (ánh sáng)
     &::before {
       content: '';
       position: absolute;
       top: 2px;
       left: 2px;
-      right: 2px;
-      height: 8px;
-      background: rgba(52, 152, 219, 0.3);
+      bottom: 2px;
+      width: 3px;
+      background: linear-gradient(180deg, 
+        rgba(255, 255, 255, 0.4) 0%, 
+        rgba(255, 255, 255, 0.1) 50%,
+        rgba(0, 0, 0, 0.1) 100%
+      );
       border-radius: 1px;
     }
-  }
-
-  &__container {
-    width: 28px;
-    height: 20px;
-    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-    border-radius: 0 2px 2px 0;
-    margin-left: 2px;
-    position: relative;
-
+    
+    // Viền tối bên phải (bóng)
     &::after {
       content: '';
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 20px;
-      height: 2px;
-      background: rgba(255, 255, 255, 0.3);
+      top: 2px;
+      right: 2px;
+      bottom: 2px;
+      width: 3px;
+      background: linear-gradient(180deg, 
+        rgba(0, 0, 0, 0.3) 0%, 
+        rgba(0, 0, 0, 0.5) 100%
+      );
+      border-radius: 1px;
+    }
+  }
+  
+  &-top {
+    position: absolute;
+    top: -3px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      #ec7063 0%, 
+      #e74c3c 30%, 
+      #e74c3c 70%, 
+      #c0392b 100%
+    );
+    border-radius: 2px 2px 0 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  &-ribs {
+    position: absolute;
+    top: 50%;
+    left: 8px;
+    right: 8px;
+    transform: translateY(-50%);
+    display: flex;
+    justify-content: space-around;
+    
+    span {
+      width: 1.5px;
+      height: 20px;
+      background: linear-gradient(180deg, 
+        rgba(0, 0, 0, 0.1) 0%, 
+        rgba(0, 0, 0, 0.3) 50%,
+        rgba(0, 0, 0, 0.1) 100%
+      );
       border-radius: 1px;
     }
   }
 
-  &__plate {
+  &-logo {
     position: absolute;
-    bottom: -18px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px;
+    height: 12px;
+    background: linear-gradient(135deg, 
+      rgba(255, 255, 255, 0.4) 0%, 
+      rgba(255, 255, 255, 0.2) 100%
+    );
+    border-radius: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  &-lights {
+    position: absolute;
+    bottom: 2px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 3px;
+
+    span {
+      width: 4px;
+      height: 3px;
+      border-radius: 1px;
+
+      &.light-left {
+        background: radial-gradient(circle, #f39c12, #e67e22);
+        box-shadow: 0 0 4px #f39c12;
+      }
+
+      &.light-right {
+        background: radial-gradient(circle, #e74c3c, #c0392b);
+        box-shadow: 0 0 4px #e74c3c;
+      }
+    }
+  }
+  
+  &-bottom {
+    position: absolute;
+    bottom: -4px;
+    left: 2px;
+    right: 2px;
+    height: 4px;
+    background: radial-gradient(ellipse at center, 
+      rgba(0, 0, 0, 0.4) 0%, 
+      rgba(0, 0, 0, 0.2) 50%,
+      transparent 100%
+    );
+    filter: blur(2px);
+  }
+}
+
+// ===== CABIN XE (Driver) - Nhìn từ trên xuống =====
+.docking-truck__cabin {
+  position: relative;
+  width: 23px;
+  height: 100%;
+  order: 2;
+  margin-left: 2px;
+
+  &-body {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #d35400 0%, #ba4a00 70%, #7e3200 100%);
+    border: 2px solid #7e3200;
+    border-radius: 2px 4px 4px 2px;
+    box-shadow: 
+      inset 0 2px 3px rgba(255, 255, 255, 0.2),
+      inset 0 -2px 3px rgba(0, 0, 0, 0.3);
+    
+    // Viền sáng (ánh sáng)
+    &::before {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      bottom: 2px;
+      width: 2px;
+      background: linear-gradient(180deg, 
+        rgba(255, 255, 255, 0.4) 0%, 
+        rgba(255, 255, 255, 0.1) 100%
+      );
+      border-radius: 1px;
+    }
+  }
+
+  &-roof {
+    position: absolute;
+    top: -3px;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      #e67e22 0%, 
+      #d35400 50%, 
+      #ba4a00 100%
+    );
+    border-radius: 2px 4px 0 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  &-windshield {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    right: 3px;
+    height: 16px;
+    background: linear-gradient(135deg, 
+      #b3e5fc 0%, 
+      #4fc3f7 40%, 
+      #03a9f4 100%
+    );
+    border: 1px solid #0277bd;
+    border-radius: 2px;
+    box-shadow: 
+      inset 0 1px 2px rgba(255, 255, 255, 0.5),
+      0 1px 2px rgba(0, 0, 0, 0.2);
+
+    .windshield-shine {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(120deg, 
+        rgba(255, 255, 255, 0.7) 0%, 
+        rgba(255, 255, 255, 0.3) 50%,
+        transparent 100%
+      );
+      border-radius: 2px 0 0 2px;
+    }
+  }
+
+  &-grille {
+    position: absolute;
+    bottom: 3px;
     left: 50%;
     transform: translateX(-50%);
-    background: white;
-    color: #2c3e50;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 10px;
-    font-weight: bold;
-    white-space: nowrap;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    border: 1px solid #e74c3c;
-    animation: pulse 2s infinite;
+    width: 14px;
+    height: 8px;
+    background: linear-gradient(180deg, 
+      rgba(0, 0, 0, 0.4) 0%, 
+      rgba(0, 0, 0, 0.6) 100%
+    );
+    border-radius: 1px;
+    border: 1px solid rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    padding: 1px;
+
+    span {
+      height: 1px;
+      background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.3) 50%,
+        transparent 100%
+      );
+    }
+  }
+
+  &-headlights {
+    position: absolute;
+    bottom: 2px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 2px;
+
+    span {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: radial-gradient(circle, 
+        #fff9c4 0%, 
+        #fdd835 60%, 
+        #f57f17 100%
+      );
+      box-shadow: 0 0 6px rgba(253, 216, 53, 0.8);
+
+      &.headlight-left,
+      &.headlight-right {
+        animation: headlightGlow 2s ease-in-out infinite;
+      }
+    }
+  }
+
+  &-mirrors {
+    .mirror-left,
+    .mirror-right {
+      position: absolute;
+      width: 5px;
+      height: 4px;
+      background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
+      border: 1px solid #1a252f;
+      border-radius: 1px;
+      box-shadow: 
+        inset 0 0 2px rgba(255, 255, 255, 0.2),
+        0 1px 2px rgba(0, 0, 0, 0.3);
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 3px;
+        height: 2px;
+        background: linear-gradient(135deg, 
+          rgba(179, 229, 252, 0.8) 0%, 
+          rgba(79, 195, 247, 0.6) 100%
+        );
+        border-radius: 1px;
+      }
+    }
+
+    .mirror-left {
+      top: 8px;
+      left: -6px;
+    }
+
+    .mirror-right {
+      top: 8px;
+      right: -6px;
+    }
+  }
+}
+
+// ===== KHÓI XẢ =====
+.docking-truck__exhaust {
+  position: absolute;
+  bottom: 2px;
+  left: 5px;
+
+  .smoke {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background: radial-gradient(circle, 
+      rgba(156, 163, 175, 0.7) 0%, 
+      rgba(156, 163, 175, 0.3) 50%,
+      transparent 100%
+    );
+    border-radius: 50%;
+    animation: smokeRise 2.5s ease-out infinite;
+
+    &:nth-child(1) { animation-delay: 0s; }
+    &:nth-child(2) { animation-delay: 0.8s; }
+    &:nth-child(3) { animation-delay: 1.6s; }
+  }
+}
+
+// ===== ĐÈN CẢNH BÁO =====
+.docking-truck__warning-light {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 10px;
+  height: 10px;
+  background: radial-gradient(circle, 
+    #fbbf24 0%, 
+    #f59e0b 60%, 
+    #d97706 100%
+  );
+  border-radius: 50%;
+  border: 2px solid #b45309;
+  box-shadow: 0 0 12px #fbbf24;
+  animation: warningBlink 0.8s infinite;
+}
+
+// ===== BIỂN SỐ XE - Luôn đúng hướng =====
+.docking-truck__plate {
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+  border: 2px solid #2c3e50;
+  border-radius: 3px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #2c3e50;
+  white-space: nowrap;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  transform-origin: center center;
+  
+  // Hiệu ứng kim loại
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(180deg, 
+      rgba(255, 255, 255, 0.5) 0%, 
+      transparent 100%
+    );
+    border-radius: 3px 3px 0 0;
+  }
+
+  .status-badge {
+    font-size: 11px;
+    animation: pulse 1s infinite;
+  }
+}
+
+// ===== ANIMATIONS =====
+@keyframes truckDock {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes smokeRise {
+  0% {
+    opacity: 0.7;
+    transform: translate(0, 0) scale(0.6);
+  }
+  50% {
+    opacity: 0.4;
+    transform: translate(5px, -15px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(10px, -30px) scale(1.5);
+  }
+}
+
+@keyframes warningBlink {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 12px #fbbf24, 0 0 20px rgba(251, 191, 36, 0.5);
+  }
+  50% {
+    opacity: 0.4;
+    box-shadow: 0 0 5px #fbbf24, 0 0 8px rgba(251, 191, 36, 0.3);
+  }
+}
+
+@keyframes headlightGlow {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(253, 216, 53, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(253, 216, 53, 1);
   }
 }
 
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }

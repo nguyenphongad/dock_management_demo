@@ -14,13 +14,15 @@ const DockItem = ({
 
   const renderDockContent = () => (
     <>
-      {/* Label phía trên (cho vertical) */}
-      {labelPosition === 'top' && (
-        <div className="dock-item__label dock-item__label--top">
+
+      {/* Label phía dưới (cho compact) */}
+      {labelPosition === 'bottom' && (
+        <div className="dock-item__label dock-item__label--bottom">
           <span>{dockCode}</span>
         </div>
       )}
 
+      
       {/* Body - 2 vị trí xe */}
       <div className="dock-item__body">
         <div className="dock-item__position">
@@ -54,12 +56,15 @@ const DockItem = ({
         </div>
       </div>
 
-      {/* Label phía dưới (cho compact) */}
-      {labelPosition === 'bottom' && (
-        <div className="dock-item__label dock-item__label--bottom">
+
+      {/* Label phía trên (cho vertical) */}
+      {labelPosition === 'top' && (
+        <div className="dock-item__label dock-item__label--top">
           <span>{dockCode}</span>
         </div>
       )}
+
+
     </>
   );
 
